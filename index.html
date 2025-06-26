@@ -3,50 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <title>Login - Kp Rute</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
   <div class="login-wrapper">
-
     <div class="logo-container">
-      <img src="logo.png" alt="Logo Kp Rute" class="logo-glow">
-    </div>
-
-    <div class="login-card">
-      <div class="form-section">
-
-        <h2>Selamat Datang!</h2>
-        <p>Semangat Kerjanya, yuk budayakan absen tepat waktu!</p>
-
-        <form onsubmit="login(event); return false;">
-          <label for="username">Username</label><br>
-          <input type="text" id="username" required><br>
-
-          <label for="password">Password</label><br>
-          <input type="password" id="password" required><br>
-
-          <a href="#">Lupa Password?</a><br>
-
-          <button type="submit" id="loginButton">
-            <span id="buttonText">LOGIN</span>
-            <span id="loadingSpinner" class="spinner" style="display:none;"></span>
-          </button>
-        </form>
-
+      <img src="css/asset/LOGO.png" alt="Logo Kp Rute" class="logo-glow" 
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="logo-placeholder" style="display: none;">
       </div>
     </div>
 
+    <div class="login-card">
+      <div class="welcome-section">
+        <h2>Selamat Datang!</h2>
+        <p>Semangat kerjanya, yuk budayakan absen tepat waktu!</p>
+      </div>
+
+      <form class="form-section" onsubmit="handleLogin(event)">
+        <div class="input-group">
+          <label for="username">Username</label>
+          <div class="input-wrapper">
+            <input 
+              type="text" 
+              id="username" 
+              name="username"
+              placeholder="Masukkan username Anda"
+              required
+              autocomplete="username"
+            >
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="password">Password</label>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="password" 
+              name="password"
+              placeholder="Masukkan password Anda"
+              required
+              autocomplete="current-password"
+            >
+          </div>
+        </div>
+
+        <button type="submit" class="login-button" id="loginButton">
+          <div class="button-content">
+            <span id="buttonText">LOGIN</span>
+            <div id="loadingSpinner" class="spinner" style="display: none;"></div>
+          </div>
+        </button>
+      </form>
+    </div>
   </div>
 
   <footer>
     <div class="footer-content">
       <p>&copy; 2025 Angkasa Express.</p>
       <p><a href="#">Kebijakan Privasi</a> | <a href="#">Syarat & Ketentuan</a></p>
-    </div>`
+    </div>
   </footer>
 
-  <script src="login.js"></script>
+  <script src="js/login.js"></script>
 
 </body>
 </html>

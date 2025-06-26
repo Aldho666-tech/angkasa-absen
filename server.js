@@ -1,14 +1,12 @@
-// Menggunakan paket 'pg' untuk Postgres, bukan mysql2
-const { Pool } = require('pg'); 
 const express = require('express');
 const path = require('path');
+const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
 const excel = require('exceljs');
 
 const app = express();
-// Railway/platform lain akan menyediakan port secara otomatis lewat process.env.PORT
-const port = process.env.PORT || 3000; 
+const port = 3000;
 
 // Middleware
 app.use(cors());
@@ -16,29 +14,31 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Koneksi Database ke Neon menggunakan Connection String dari Railway
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false // Diperlukan untuk koneksi ke Neon/platform serupa
-    }
+// Koneksi Database
+const pool = mysql.createPool({
+    host: 'srv479.hstgr.io',             // Pastikan ini
+    user: 'u980343921_dbangkasa',                  // Pastikan ini
+    password: 'Aldolega123/', // PASTIKAN INI KATA SANDI YANG PERSIS DAN BENAR
+    database: 'u980343921_db_absen', // PASTIKAN NAMA DATABASE INI BENAR
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
-// Halaman Utama (jika diperlukan)
+// Halaman Utama
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // === API OTENTIKASI ===
-// Catatan: Sintaks query untuk Postgres menggunakan $1, $2, dst. bukan '?'
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [username]);
-        if (result.rows.length === 0) {
+        const [rows] = await pool.execute('SELECT * FROM users WHERE email = ?', [username]);
+        if (rows.length === 0) {
             return res.status(401).json({ success: false, message: 'Username atau password salah.' });
         }
-        const user = result.rows[0];
+        const user = rows[0];
         const isPasswordMatch = await bcrypt.compare(password, user.password_hash);
         if (!isPasswordMatch) {
             return res.status(401).json({ success: false, message: 'Username atau password salah.' });
@@ -51,7 +51,7 @@ app.post('/api/login', async (req, res) => {
             userData: {
                 id: user.id,
                 namaLengkap: user.nama_lengkap, 
-                nama: user.nama_lengkap,
+                nama: user.nama_lengkap, // 'nama' dipertahankan untuk kompatibilitas
                 email: user.email,
                 telepon: user.telepon
             }
@@ -66,22 +66,15 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/clockin', async (req, res) => {
     const { userId, time, location, photo } = req.body;
     try {
-        const settingsResult = await pool.query('SELECT jam_masuk FROM attendance_settings WHERE id = 1');
-        const jamMasukKantor = settingsResult.rows.length > 0 ? settingsResult.rows[0].jam_masuk : '00:00:00';
+        const [settings] = await pool.execute('SELECT jam_masuk FROM attendance_settings WHERE id = 1');
+        const jamMasukKantor = settings.length > 0 ? settings[0].jam_masuk : '00:00:00';
         const status = time > jamMasukKantor ? 'Telat' : 'Hadir';
         
-        // Postgres menggunakan ON CONFLICT ... DO UPDATE untuk "INSERT OR UPDATE"
         const query = `
-            INSERT INTO attendance (user_id, tanggal, status, waktu_masuk, lokasi_masuk, foto_masuk) 
-            VALUES ($1, CURRENT_DATE, $2, $3, $4, $5)
-            ON CONFLICT (user_id, tanggal) 
-            DO UPDATE SET 
-                status = EXCLUDED.status, 
-                waktu_masuk = EXCLUDED.waktu_masuk, 
-                lokasi_masuk = EXCLUDED.lokasi_masuk, 
-                foto_masuk = EXCLUDED.foto_masuk;
+            INSERT INTO attendance (user_id, tanggal, status, waktu_masuk, lokasi_masuk, foto_masuk) VALUES (?, CURDATE(), ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE status = VALUES(status), waktu_masuk = VALUES(waktu_masuk), lokasi_masuk = VALUES(lokasi_masuk), foto_masuk = VALUES(foto_masuk);
         `;
-        await pool.query(query, [userId, status, time, location, photo]);
+        await pool.execute(query, [userId, status, time, location, photo]);
         
         res.status(200).json({ message: `Absen masuk berhasil dengan status: ${status}` });
     } catch (error) {
@@ -92,30 +85,65 @@ app.post('/api/clockin', async (req, res) => {
 
 app.post('/api/clockout', async (req, res) => {
     const { userId, time, location, photo } = req.body;
+    console.log(`Menerima permintaan clock-out untuk userId: ${userId} pada jam ${time}`);
     try {
-        const query = `UPDATE attendance SET waktu_pulang = $1, lokasi_pulang = $2, foto_pulang = $3 WHERE user_id = $4 AND tanggal = CURRENT_DATE;`;
-        await pool.query(query, [time, location, photo, userId]);
-        
+        const query = `UPDATE attendance SET waktu_pulang = ?, lokasi_pulang = ?, foto_pulang = ? WHERE user_id = ? AND tanggal = CURDATE();`;
+        const [result] = await pool.execute(query, [time, location, photo, userId]);
+
+        if (result.affectedRows === 0) {
+            console.error(`Gagal update: Tidak ditemukan data absen masuk untuk userId: ${userId} pada hari ini.`);
+            return res.status(404).json({ message: 'Gagal: Tidak ditemukan data absen masuk untuk hari ini. Silakan absen masuk terlebih dahulu.' });
+        }
+
+        console.log(`Berhasil update: ${result.affectedRows} baris data untuk userId: ${userId} telah diperbarui.`);
         res.status(200).json({ message: 'Absen pulang berhasil' });
     } catch (error) {
+        console.error('Clockout database error:', error);
         res.status(500).json({ error: 'Database error: ' + error.message });
     }
 });
 
+
 // === API PENGGUNA & RIWAYAT ===
+
+// =======================================================
+// ENDPOINT BARU DITAMBAHKAN DI SINI
+// =======================================================
+// Endpoint untuk mengecek status absensi hari ini untuk seorang user
+app.get('/api/attendance/today/:userId', async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const query = "SELECT * FROM attendance WHERE user_id = ? AND tanggal = CURDATE()";
+        const [rows] = await pool.execute(query, [userId]);
+
+        if (rows.length > 0) {
+            // Jika data ditemukan, kirim datanya
+            res.json({ status: 'found', data: rows[0] });
+        } else {
+            // Jika tidak ada data untuk hari ini
+            res.json({ status: 'not_found', data: null });
+        }
+    } catch (error) {
+        console.error('Error fetching today\'s attendance:', error);
+        res.status(500).json({ error: 'Gagal mengambil data absensi hari ini' });
+    }
+});
+// =======================================================
+// AKHIR DARI ENDPOINT BARU
+// =======================================================
+
 app.get('/api/attendance/history/:userId', async (req, res) => {
     const { userId } = req.params;
     const { bulan } = req.query; 
     if (!bulan) return res.status(400).json({ error: 'Parameter bulan diperlukan' });
     try {
-        // Menggunakan to_char untuk format tanggal di Postgres
         const query = `
-            SELECT to_char(tanggal, 'YYYY-MM-DD') as tanggal, status, waktu_masuk, waktu_pulang 
+            SELECT DATE_FORMAT(tanggal, '%Y-%m-%d') as tanggal, status, waktu_masuk, waktu_pulang 
             FROM attendance 
-            WHERE user_id = $1 AND to_char(tanggal, 'YYYY-MM') = $2
+            WHERE user_id = ? AND DATE_FORMAT(tanggal, '%Y-%m') = ? 
             ORDER BY tanggal DESC`;
-        const result = await pool.query(query, [userId, bulan]);
-        res.json(result.rows);
+        const [rows] = await pool.execute(query, [userId, bulan]);
+        res.json(rows);
     } catch (error) {
         res.status(500).json({ error: 'Database error: ' + error.message });
     }
@@ -124,8 +152,8 @@ app.get('/api/attendance/history/:userId', async (req, res) => {
 app.get('/api/users/:id/profile', async (req, res) => {
     const { id } = req.params;
     try {
-        const result = await pool.query('SELECT id, nama_lengkap as namaLengkap, email, telepon, foto_profil FROM users WHERE id = $1', [id]);
-        if (result.rows.length > 0) res.json(result.rows[0]);
+        const [rows] = await pool.execute('SELECT id, nama_lengkap as namaLengkap, email, telepon, foto_profil FROM users WHERE id = ?', [id]);
+        if (rows.length > 0) res.json(rows[0]);
         else res.status(404).json({ error: 'User tidak ditemukan' });
     } catch (error) {
         res.status(500).json({ error: 'Database error: ' + error.message });
@@ -134,28 +162,31 @@ app.get('/api/users/:id/profile', async (req, res) => {
 
 app.put('/api/users/:id/profile', async (req, res) => {
     const { id } = req.params;
-    const { namaLengkap, email, telepon, foto_profil } = req.body;
+    const { namaLengkap, email, telepon, foto_profil, password } = req.body;
     try {
-        let query;
+        let query = 'UPDATE users SET nama_lengkap = ?, email = ?, telepon = ?';
         const values = [namaLengkap, email, telepon];
         if (foto_profil) {
-            query = 'UPDATE users SET nama_lengkap = $1, email = $2, telepon = $3, foto_profil = $4 WHERE id = $5';
-            values.push(foto_profil, id);
-        } else {
-            query = 'UPDATE users SET nama_lengkap = $1, email = $2, telepon = $3 WHERE id = $4';
-            values.push(id);
+            query += ', foto_profil = ?';
+            values.push(foto_profil);
         }
-        
-        await pool.query(query, values);
-        const updatedUserResult = await pool.query('SELECT id, nama_lengkap as namaLengkap, email, telepon, foto_profil FROM users WHERE id = $1', [id]);
-        res.json({ message: 'Profil berhasil diperbarui!', updatedUser: updatedUserResult.rows[0] });
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            query += ', password_hash = ?';
+            values.push(hashedPassword);
+        }
+        query += ' WHERE id = ?';
+        values.push(id);
+        await pool.execute(query, values);
+        const [updatedUserRows] = await pool.execute('SELECT id, nama_lengkap as namaLengkap, email, telepon, foto_profil FROM users WHERE id = ?', [id]);
+        res.json({ message: 'Profil berhasil diperbarui!', updatedUser: updatedUserRows[0] });
     } catch (error) {
         console.error("Update profile error:", error);
         res.status(500).json({ error: 'Database error: ' + error.message });
     }
 });
 
-// === API PANEL ADMIN ===
+// === API PANEL ADMIN (CRUD KARYAWAN, PENGATURAN, DLL) ===
 app.get('/api/absensi/harian', async (req, res) => {
     const { tanggal } = req.query;
     if (!tanggal) return res.status(400).json({ error: 'Parameter tanggal diperlukan' });
@@ -163,17 +194,27 @@ app.get('/api/absensi/harian', async (req, res) => {
         const query = `
             SELECT u.nama_lengkap, a.status, a.waktu_masuk, a.waktu_pulang, a.lokasi_masuk, a.foto_masuk
             FROM attendance a JOIN users u ON a.user_id = u.id
-            WHERE a.tanggal = $1 ORDER BY u.nama_lengkap;`;
-        const result = await pool.query(query, [tanggal]);
-        res.json(result.rows);
+            WHERE a.tanggal = ? ORDER BY u.nama_lengkap;`;
+        const [rows] = await pool.execute(query, [tanggal]);
+        res.json(rows);
     } catch (error) { res.status(500).json({ error: 'Database error: ' + error.message }); }
 });
 
 app.get('/api/karyawan', async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, nama_lengkap, email, telepon FROM users WHERE email NOT LIKE \'%admin%\' ORDER BY nama_lengkap');
-        res.json(result.rows);
+        const [rows] = await pool.execute('SELECT id, nama_lengkap, email, telepon FROM users WHERE email NOT LIKE \'%admin%\' ORDER BY nama_lengkap');
+        res.json(rows);
     } catch (error) { res.status(500).json({ error: 'Database error: ' + error.message }); }
+});
+
+app.get('/api/karyawan/count', async (req, res) => {
+    try {
+        const [rows] = await pool.execute('SELECT COUNT(id) as count FROM users WHERE email NOT LIKE \'%admin%\'');
+        res.json({ count: rows[0].count });
+    } catch (error) {
+        console.error('Error fetching total employee count:', error);
+        res.status(500).json({ error: 'Database error: ' + error.message });
+    }
 });
 
 app.post('/api/karyawan', async (req, res) => {
@@ -181,7 +222,7 @@ app.post('/api/karyawan', async (req, res) => {
     if (!namaLengkap || !email || !password) return res.status(400).json({ error: 'Nama, email, dan password harus diisi.' });
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        await pool.query('INSERT INTO users (nama_lengkap, email, telepon, password_hash) VALUES ($1, $2, $3, $4)', [namaLengkap, email, telepon, hashedPassword]);
+        await pool.execute('INSERT INTO users (nama_lengkap, email, telepon, password_hash) VALUES (?, ?, ?, ?)', [namaLengkap, email, telepon, hashedPassword]);
         res.status(201).json({ message: 'Karyawan baru berhasil ditambahkan' });
     } catch (error) { res.status(500).json({ error: 'Database error: ' + error.message }); }
 });
@@ -192,9 +233,9 @@ app.put('/api/karyawan/:id', async (req, res) => {
     try {
         if (password) {
             const hashedPassword = await bcrypt.hash(password, 10);
-            await pool.query('UPDATE users SET nama_lengkap = $1, email = $2, telepon = $3, password_hash = $4 WHERE id = $5', [namaLengkap, email, telepon, hashedPassword, id]);
+            await pool.execute('UPDATE users SET nama_lengkap = ?, email = ?, telepon = ?, password_hash = ? WHERE id = ?', [namaLengkap, email, telepon, hashedPassword, id]);
         } else {
-            await pool.query('UPDATE users SET nama_lengkap = $1, email = $2, telepon = $3 WHERE id = $4', [namaLengkap, email, telepon, id]);
+            await pool.execute('UPDATE users SET nama_lengkap = ?, email = ?, telepon = ? WHERE id = ?', [namaLengkap, email, telepon, id]);
         }
         res.json({ message: 'Data berhasil diperbarui' });
     } catch (error) { res.status(500).json({ error: 'Database error: ' + error.message }); }
@@ -202,27 +243,49 @@ app.put('/api/karyawan/:id', async (req, res) => {
 
 app.delete('/api/karyawan/:id', async (req, res) => {
     try {
-        await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
+        await pool.execute('DELETE FROM users WHERE id = ?', [req.params.id]);
         res.json({ message: 'Karyawan berhasil dihapus' });
     } catch (error) { res.status(500).json({ error: 'Database error: ' + error.message }); }
 });
 
 app.get('/api/settings/attendance', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM attendance_settings WHERE id = 1');
-        res.json(result.rows.length > 0 ? result.rows[0] : {});
+        const [rows] = await pool.execute('SELECT * FROM attendance_settings WHERE id = 1');
+        res.json(rows.length > 0 ? rows[0] : {});
     } catch (error) { res.status(500).json({ error: 'Database error: ' + error.message }); }
 });
-
 app.put('/api/settings/attendance', async (req, res) => {
     const { jam_masuk, jam_pulang, latitude, longitude, radius } = req.body;
     try {
         const query = `
-            INSERT INTO attendance_settings (id, jam_masuk, jam_pulang, latitude, longitude, radius) VALUES (1, $1, $2, $3, $4, $5)
-            ON CONFLICT (id) DO UPDATE SET jam_masuk=EXCLUDED.jam_masuk, jam_pulang=EXCLUDED.jam_pulang, latitude=EXCLUDED.latitude, longitude=EXCLUDED.longitude, radius=EXCLUDED.radius;`;
-        await pool.query(query, [jam_masuk, jam_pulang, latitude, longitude, radius]);
+            INSERT INTO attendance_settings (id, jam_masuk, jam_pulang, latitude, longitude, radius) VALUES (1, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE jam_masuk=VALUES(jam_masuk), jam_pulang=VALUES(jam_pulang), latitude=VALUES(latitude), longitude=VALUES(longitude), radius=VALUES(radius);`;
+        await pool.execute(query, [jam_masuk, jam_pulang, latitude, longitude, radius]);
         res.json({ message: 'Pengaturan absensi berhasil disimpan!' });
     } catch (error) { res.status(500).json({ error: 'Database error: ' + error.message }); }
+});
+
+app.get('/api/dashboard/summaryToday', async (req, res) => {
+    const today = new Date().toISOString().split('T')[0];
+    try {
+        const [hadirRows] = await pool.execute(`
+            SELECT COUNT(id) as count FROM attendance 
+            WHERE tanggal = ? AND (status = 'Hadir' OR status = 'Telat');
+        `, [today]);
+
+        const [telatRows] = await pool.execute(`
+            SELECT COUNT(id) as count FROM attendance 
+            WHERE tanggal = ? AND status = 'Telat';
+        `, [today]);
+
+        res.json({
+            hadir: hadirRows[0].count,
+            telat: telatRows[0].count
+        });
+    } catch (error) {
+        console.error('Error fetching dashboard summary:', error);
+        res.status(500).json({ error: 'Database error: ' + error.message });
+    }
 });
 
 app.get('/api/rekap/bulanan', async (req, res) => {
@@ -232,30 +295,30 @@ app.get('/api/rekap/bulanan', async (req, res) => {
     }
     try {
         const query = `
-            SELECT u.nama_lengkap, to_char(a.tanggal, 'YYYY-MM-DD') as tanggal, a.status, a.waktu_masuk, a.waktu_pulang
+            SELECT u.nama_lengkap, DATE_FORMAT(a.tanggal, '%Y-%m-%d') as tanggal, a.status, a.waktu_masuk, a.waktu_pulang
             FROM attendance a 
             JOIN users u ON u.id = a.user_id
-            WHERE to_char(a.tanggal, 'YYYY-MM') = $1
+            WHERE DATE_FORMAT(a.tanggal, '%Y-%m') = ? 
             ORDER BY a.tanggal, u.nama_lengkap;
         `;
-        const result = await pool.query(query, [bulan]);
-        res.json(result.rows);
+        const [rows] = await pool.execute(query, [bulan]);
+        res.json(rows);
     } catch (error) {
         console.error('Error fetching monthly recap:', error);
         res.status(500).json({ error: 'Database error: ' + error.message });
     }
 });
 
+
 app.get('/api/rekap/download', async (req, res) => {
     const { bulan } = req.query;
     if (!bulan) return res.status(400).json({ error: 'Parameter bulan diperlukan' });
     try {
-        const result = await pool.query(`
+        const [rows] = await pool.execute(`
             SELECT u.nama_lengkap, a.tanggal, a.status, a.waktu_masuk, a.waktu_pulang
             FROM attendance a JOIN users u ON u.id = a.user_id
-            WHERE to_char(a.tanggal, 'YYYY-MM') = $1 ORDER BY u.nama_lengkap, a.tanggal;
+            WHERE DATE_FORMAT(a.tanggal, '%Y-%m') = ? ORDER BY u.nama_lengkap, a.tanggal;
         `, [bulan]);
-
         const workbook = new excel.Workbook();
         const worksheet = workbook.addWorksheet(`Rekap Absensi ${bulan}`);
         worksheet.columns = [
@@ -265,7 +328,7 @@ app.get('/api/rekap/download', async (req, res) => {
             { header: 'Jam Masuk', key: 'masuk', width: 15 },
             { header: 'Jam Pulang', key: 'pulang', width: 15 }
         ];
-        result.rows.forEach(row => {
+        rows.forEach(row => {
             worksheet.addRow({
                 tanggal: new Date(row.tanggal).toLocaleDateString('id-ID'),
                 nama: row.nama_lengkap,
@@ -286,12 +349,9 @@ app.get('/api/rekap/download', async (req, res) => {
 
 // Jalankan Server
 app.listen(port, () => {
-    console.log(`Server berjalan di port ${port}`);
-    pool.connect(err => {
-        if(err) {
-            console.error('Gagal terhubung ke database Postgres:', err.stack);
-        } else {
-            console.log('Terhubung ke database Postgres.');
-        }
-    });
+    console.log(`Server berjalan di http://localhost:${port}`);
+    pool.getConnection().then(conn => {
+        console.log('Terhubung ke database MySQL.');
+        conn.release();
+    }).catch(err => console.error('Gagal terhubung ke database:', err));
 });
