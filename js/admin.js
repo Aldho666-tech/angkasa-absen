@@ -5,7 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // KONFIGURASI DAN STATE APLIKASI
     // =================================================================
-    const API_BASE_URL = 'http://93.127.167.168:3000/api';
+    const API_BASE_URL = window.location.protocol.startsWith('http')
+        ? (window.location.port === '3000' || !window.location.port ? '/api' : 'http://localhost:3000/api')
+        : 'http://localhost:3000/api';
     let userData = JSON.parse(sessionStorage.getItem('userData'));
 
     if (!userData || sessionStorage.getItem('userRole') !== 'admin') {

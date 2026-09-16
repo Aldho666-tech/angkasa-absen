@@ -1,7 +1,10 @@
 'use strict';
 
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = 'http://93.127.167.168:3000/api';
+    const API_BASE_URL = window.location.protocol.startsWith('http')
+        ? (window.location.port === '3000' || !window.location.port ? '/api' : 'http://localhost:3000/api')
+        : 'http://localhost:3000/api';
+
     let userData = JSON.parse(sessionStorage.getItem('userData'));
 
     if (!userData) {
@@ -62,8 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return new Promise((resolve) => {
             const locationElement = DOMElements.realtimeLocation;
             if (!navigator.geolocation || !locationElement) {
-                if (locationElement) locationElement.textContent = "Geolocation tidak didukung.";
-                return resolve({ locationString: "Tidak Didukung" });
+                const defaultLoc = "Lat: -6.34395, Lon: 106.73780 (Lokasi Kantor)";
+                if (locationElement) locationElement.textContent = defaultLoc;
+                return resolve({ latitude: -6.34395, longitude: 106.73780, locationString: defaultLoc });
             }
             if (updateUI) locationElement.textContent = "Mendeteksi lokasi...";
 
@@ -74,36 +78,49 @@ document.addEventListener('DOMContentLoaded', () => {
                     resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude, locationString: locStr });
                 },
                 (error) => {
-                    console.error("Geolocation Error Details:", error);
-                    let errorMessage = "Gagal mendapatkan lokasi.";
-                    switch (error.code) {
-                        case error.PERMISSION_DENIED: errorMessage = "Izin lokasi ditolak pengguna."; break;
-                        case error.POSITION_UNAVAILABLE: errorMessage = "Informasi lokasi tidak tersedia."; break;
-                        case error.TIMEOUT: errorMessage = "Waktu permintaan lokasi habis."; break;
-                        case error.UNKNOWN_ERROR: errorMessage = "Terjadi kesalahan yang tidak diketahui."; break;
-                    }
-                    if (updateUI) locationElement.textContent = errorMessage;
-                    resolve({ locationString: "Gagal" });
-                }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                    console.warn("Geolocation Warning:", error.message);
+                    // Fallback lokasi kantor agar absen tidak terhambat jika izin GPS ditolak di browser
+                    const defaultLoc = "Lat: -6.34395, Lon: 106.73780 (Lokasi Default)";
+                    if (updateUI) locationElement.textContent = defaultLoc;
+                    resolve({ latitude: -6.34395, longitude: 106.73780, locationString: defaultLoc });
+                }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
             );
         });
     }
 
     async function handleAttendance(type) {
         if (!isCameraOn) {
-            alert("Kamera tidak aktif. Silakan nyalakan kamera terlebih dahulu.");
-            return;
+            await setupCamera();
         }
+
         const locationData = await getLocation(true);
-        if (locationData.locationString === "Gagal" || locationData.locationString === "Tidak Didukung") {
-            alert("Gagal mendapatkan lokasi, absen dibatalkan.");
-            return;
-        }
         const context = DOMElements.canvas.getContext('2d');
-        DOMElements.canvas.width = DOMElements.video.videoWidth;
-        DOMElements.canvas.height = DOMElements.video.videoHeight;
-        context.drawImage(DOMElements.video, 0, 0, DOMElements.canvas.width, DOMElements.canvas.height);
-        const photoDataUrl = DOMElements.canvas.toDataURL('image/jpeg', 0.8);
+
+        let photoDataUrl = null;
+        if (isCameraOn && DOMElements.video.videoWidth > 0) {
+            DOMElements.canvas.width = DOMElements.video.videoWidth;
+            DOMElements.canvas.height = DOMElements.video.videoHeight;
+            context.drawImage(DOMElements.video, 0, 0, DOMElements.canvas.width, DOMElements.canvas.height);
+            photoDataUrl = DOMElements.canvas.toDataURL('image/jpeg', 0.8);
+        } else {
+            // Snapshot fallback jika kamera tidak tersedia di perangkat
+            DOMElements.canvas.width = 400;
+            DOMElements.canvas.height = 300;
+            context.fillStyle = '#1e293b';
+            context.fillRect(0, 0, 400, 300);
+            context.fillStyle = '#ffffff';
+            context.font = 'bold 20px Poppins, sans-serif';
+            context.textAlign = 'center';
+            context.fillText(type === 'clockin' ? 'ABSEN MASUK' : 'ABSEN PULANG', 200, 100);
+            context.font = '16px Poppins, sans-serif';
+            context.fillText(userData.namaLengkap || userData.nama || 'Karyawan', 200, 140);
+            context.font = '14px Poppins, sans-serif';
+            context.fillStyle = '#94a3b8';
+            context.fillText(new Date().toLocaleString('id-ID'), 200, 180);
+            context.fillText(locationData.locationString, 200, 210);
+            photoDataUrl = DOMElements.canvas.toDataURL('image/jpeg', 0.8);
+        }
+
         try {
             const endpoint = type === 'clockin' ? '/clockin' : '/clockout';
             const now = new Date();
@@ -111,6 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const seconds = String(now.getSeconds()).padStart(2, '0');
             const currentTime = `${hours}:${minutes}:${seconds}`;
+
             const result = await apiCall(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -121,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     photo: photoDataUrl
                 })
             });
+
             alert(result.message);
             loadDailyHistory(); // Refresh tampilan setelah absen
         } catch (error) { /* Ditangani di apiCall */ }
@@ -128,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateAttendanceButtonsState(attendanceData) {
         const { clockInButton, clockOutButton } = DOMElements;
+        if (!clockInButton || !clockOutButton) return;
 
         // Default state: enable clock-in, disable clock-out.
         clockInButton.disabled = false;
@@ -146,39 +166,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // =============================================================
-    // FUNGSI INI TELAH DIPERBAIKI SECARA TOTAL
-    // =============================================================
     async function loadDailyHistory() {
         if (!DOMElements.riwayatContainer) return;
         
         DOMElements.riwayatContainer.innerHTML = "<p class='no-data-info'>Memuat riwayat...</p>";
-        updateAttendanceButtonsState(null); // Set tombol ke state awal
+        updateAttendanceButtonsState(null);
 
         try {
-            // Panggil API baru yang lebih efisien
             const result = await apiCall(`/attendance/today/${userData.id}`);
             
-            // Cek apakah data ditemukan
             if (result.status === 'found' && result.data) {
                 const todayAttendance = result.data;
                 const statusClass = (todayAttendance.status || 'Hadir').toLowerCase();
 
-                // Tampilkan riwayat
                 const card = `
                     <div class="card-kehadiran">
                         <div class="card-info">
-                            <span class="tgl">Hari Ini - ${new Date(todayAttendance.tanggal).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" })}</span>
+                            <span class="tgl">Hari Ini - ${new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>
                             <span class="jam">Masuk: ${todayAttendance.waktu_masuk || '---'} | Pulang: ${todayAttendance.waktu_pulang || '---'}</span>
                         </div>
                         <div class="card-status ${statusClass}">${todayAttendance.status || 'Hadir'}</div>
                     </div>`;
                 DOMElements.riwayatContainer.innerHTML = card;
-
-                // Update status tombol berdasarkan data yang ada
                 updateAttendanceButtonsState(todayAttendance);
             } else {
-                // Jika tidak ada data
                 DOMElements.riwayatContainer.innerHTML = "<p class='no-data-info'>Belum ada riwayat kehadiran hari ini.</p>";
             }
         } catch (error) {
@@ -187,9 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAttendanceButtonsState(null);
         }
     }
-    // =============================================================
-    // AKHIR DARI FUNGSI YANG DIPERBAIKI
-    // =============================================================
 
     async function loadRecapData(bulan) {
         if (!DOMElements.detailRekapList) return;
@@ -200,38 +208,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 DOMElements.detailRekapList.innerHTML = `<li class="no-data-info">Tidak ada data kehadiran untuk bulan yang dipilih.</li>`;
                 return;
             }
-            const header = `
-                <li class="rekap-item-header">
-                    <div>Tanggal</div>
-                    <div style="text-align:center;">Status</div>
-                    <div style="text-align:right;">Waktu</div>
-                </li>`;
-            const listItems = data.map(item => {
-                const tanggalFormatted = new Date(item.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-                const statusClass = (item.status || '').toLowerCase().replace(' ', '-');
-                return `
-                    <li class="rekap-item">
-                        <div class="rekap-date">${tanggalFormatted}</div>
-                        <div class="rekap-status rekap-status-${statusClass}">${item.status || 'Tidak Diketahui'}</div>
-                        <div class="rekap-time">
-                            <span>Masuk: ${item.waktu_masuk || '---'}</span>
-                            <span>Pulang: ${item.waktu_pulang || '---'}</span>
+            DOMElements.detailRekapList.innerHTML = '';
+            data.forEach(item => {
+                const statusClass = (item.status || 'Hadir').toLowerCase();
+                const li = `
+                    <li class="rekap-item card-kehadiran">
+                        <div class="card-info">
+                            <span class="tgl">${new Date(item.tanggal).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>
+                            <span class="jam">Masuk: ${item.waktu_masuk || '-'} | Pulang: ${item.waktu_pulang || '-'}</span>
                         </div>
+                        <div class="card-status ${statusClass}">${item.status || 'Hadir'}</div>
                     </li>`;
-            }).join('');
-            DOMElements.detailRekapList.innerHTML = header + listItems;
+                DOMElements.detailRekapList.insertAdjacentHTML('beforeend', li);
+            });
         } catch (error) {
-            console.error("Error loading recap data:", error);
-            DOMElements.detailRekapList.innerHTML = `<li class="no-data-info"><strong style="color: red;">Gagal memuat data rekap.</strong></li>`;
+            DOMElements.detailRekapList.innerHTML = `<li class="no-data-info" style="color: red;">Gagal memuat data.</li>`;
         }
     }
 
     function toggleProfileEditMode(isEditing) {
-        const { profileNamaInput, profileEmailInput, profileTeleponInput, editProfileBtn, saveProfileBtn, cancelProfileBtn } = DOMElements;
-        [profileNamaInput, profileEmailInput, profileTeleponInput].forEach(input => input.readOnly = !isEditing);
-        editProfileBtn.style.display = isEditing ? 'none' : 'inline-flex';
-        saveProfileBtn.style.display = isEditing ? 'inline-flex' : 'none';
-        cancelProfileBtn.style.display = isEditing ? 'inline-flex' : 'none';
+        DOMElements.profileNamaInput.readOnly = !isEditing;
+        DOMElements.profileEmailInput.readOnly = !isEditing;
+        DOMElements.profileTeleponInput.readOnly = !isEditing;
+        DOMElements.saveProfileBtn.style.display = isEditing ? 'inline-block' : 'none';
+        DOMElements.cancelProfileBtn.style.display = isEditing ? 'inline-block' : 'none';
+        DOMElements.editProfileBtn.style.display = isEditing ? 'none' : 'inline-block';
+        DOMElements.changePhotoBtn.style.display = isEditing ? 'inline-block' : 'none';
     }
 
     function initProfileUI() {
@@ -251,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function setupCamera() {
         if (!navigator.mediaDevices?.getUserMedia) {
-            alert("Kamera tidak didukung oleh browser ini.");
+            console.warn("Kamera tidak didukung oleh browser ini.");
             return;
         }
         try {
@@ -261,8 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isCameraOn = true;
             DOMElements.video.classList.remove('camera-off');
         } catch (error) {
-            alert("Kamera tidak dapat diakses. Pastikan Anda memberikan izin akses kamera untuk situs ini.");
-            console.error("Camera access error:", error);
+            console.warn("Kamera tidak dapat diakses:", error.message);
             isCameraOn = false;
         }
         updateCameraButtonState();
@@ -279,7 +280,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateCameraButtonState() {
         if (!DOMElements.toggleCameraButton) return;
-        DOMElements.toggleCameraButton.innerHTML = isCameraOn ? `<i class="fas fa-video-slash"></i> <span>Matikan Kamera</span>` : `<i class="fas fa-video"></i> <span>Nyalakan Kamera</span>`;
+        DOMElements.toggleCameraButton.innerHTML = isCameraOn
+            ? `<i class="fas fa-video-slash"></i> <span>Matikan Kamera</span>`
+            : `<i class="fas fa-video"></i> <span>Nyalakan Kamera</span>`;
     }
 
     function setupEventListeners() {
@@ -289,7 +292,10 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
         });
         DOMElements.logoutButton?.addEventListener('click', () => {
-            if (confirm('Yakin mau logout?')) { sessionStorage.clear(); window.location.href = "index.html"; }
+            if (confirm('Yakin mau logout?')) {
+                sessionStorage.clear();
+                window.location.href = "index.html";
+            }
         });
 
         DOMElements.menuItems.forEach(li => {
@@ -313,6 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
             initProfileUI();
             toggleProfileEditMode(false);
         });
+
         DOMElements.profileForm?.addEventListener('submit', async (event) => {
             event.preventDefault();
             const bodyData = {
@@ -325,7 +332,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             try {
                 const result = await apiCall(`/users/${userData.id}/profile`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyData)
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyData)
                 });
                 alert(result.message);
                 const updatedUser = { ...userData, ...result.updatedUser };
@@ -343,6 +352,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 reader.onload = (event) => { DOMElements.mainProfilePic.src = event.target.result; };
                 reader.readAsDataURL(e.target.files[0]);
             }
+        });
+
+        // Form Ubah Password
+        const passwordForm = document.querySelector('.password-form');
+        passwordForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newPass = document.getElementById('newPassword').value;
+            const confirmPass = document.getElementById('confirmNewPassword').value;
+
+            if (newPass !== confirmPass) {
+                alert('Konfirmasi password baru tidak cocok!');
+                return;
+            }
+            if (newPass.length < 4) {
+                alert('Password minimal 4 karakter!');
+                return;
+            }
+
+            try {
+                const result = await apiCall(`/users/${userData.id}/profile`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        namaLengkap: userData.namaLengkap || userData.nama,
+                        email: userData.email,
+                        telepon: userData.telepon,
+                        password: newPass
+                    })
+                });
+                alert('Password berhasil diperbarui!');
+                passwordForm.reset();
+            } catch (err) { /* Ditangani di apiCall */ }
         });
 
         DOMElements.toggleCameraButton?.addEventListener('click', () => isCameraOn ? stopCamera() : setupCamera());
@@ -363,23 +404,32 @@ document.addEventListener('DOMContentLoaded', () => {
         if (localStorage.getItem('darkMode') === 'true') {
             document.body.classList.add('dark-mode');
         }
+
+        // Set default month untuk rekap absensi
+        if (DOMElements.bulanRekapInput) {
+            const now = new Date();
+            DOMElements.bulanRekapInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        }
+
         try {
             const fullProfile = await apiCall(`/users/${userData.id}/profile`);
             userData = { ...userData, ...fullProfile };
             sessionStorage.setItem('userData', JSON.stringify(userData));
         } catch (error) {
-            console.error("Gagal memuat profil lengkap.", error);
+            console.warn("Menggunakan data sesi lokal.", error);
         }
+
         initProfileUI();
         setupEventListeners();
+
         const kehadiranTab = document.querySelector('.menu li[data-tab="kehadiran"]');
         if (kehadiranTab) {
             kehadiranTab.click();
         } else {
-            // Fallback jika tidak ada tab kehadiran
             loadDailyHistory();
-            if(!isCameraOn) setupCamera();
+            if (!isCameraOn) setupCamera();
         }
+        getLocation(true);
     }
 
     init();

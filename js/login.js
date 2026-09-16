@@ -1,13 +1,22 @@
 'use strict';
 
 /**
+ * Base URL API yang fleksibel untuk berbagai environment:
+ * - Localhost port 3000: '/api'
+ * - Web server lain (live server dsb): 'http://localhost:3000/api'
+ */
+const API_BASE_URL = window.location.protocol.startsWith('http')
+  ? (window.location.port === '3000' || !window.location.port ? '/api' : 'http://localhost:3000/api')
+  : 'http://localhost:3000/api';
+
+/**
  * Menangani proses login saat form disubmit.
  * Fungsi ini mengirimkan data ke server, memproses respons,
  * dan mengarahkan pengguna ke halaman yang sesuai.
  * @param {Event} event - Objek event dari form submission.
  */
 async function handleLogin(event) {
-  event.preventDefault(); // Mencegah form dari reload halaman
+  if (event) event.preventDefault(); // Mencegah form dari reload halaman
 
   // Mengambil elemen-elemen DOM yang dibutuhkan
   const loginButton = document.getElementById('loginButton');
@@ -16,7 +25,7 @@ async function handleLogin(event) {
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
 
-  const username = usernameInput.value;
+  const username = usernameInput.value.trim();
   const password = passwordInput.value;
 
   // Validasi input dasar
@@ -32,7 +41,7 @@ async function handleLogin(event) {
 
   try {
     // Mengirim data login ke server menggunakan API Fetch
-    const response = await fetch('http://93.127.167.168:3000/api/login', { 
+    const response = await fetch(`${API_BASE_URL}/login`, { 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -48,7 +57,6 @@ async function handleLogin(event) {
     }
 
     // Jika login berhasil, simpan data pengguna ke sessionStorage
-    alert(result.message); // Menampilkan pesan "Login berhasil!" dari server
     sessionStorage.setItem('userData', JSON.stringify(result.userData));
     sessionStorage.setItem('userRole', result.role);
 
@@ -70,6 +78,19 @@ async function handleLogin(event) {
   }
 }
 
+/**
+ * Fungsi pembantu untuk mengisi akun demo secara cepat
+ */
+function quickLogin(username, password) {
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+  if (usernameInput && passwordInput) {
+    usernameInput.value = username;
+    passwordInput.value = password;
+    usernameInput.dispatchEvent(new Event('input'));
+    passwordInput.dispatchEvent(new Event('input'));
+  }
+}
 
 /**
  * Menambahkan interaksi UI tambahan pada halaman setelah seluruh konten dimuat.
@@ -80,22 +101,21 @@ document.addEventListener('DOMContentLoaded', function() {
   inputs.forEach(input => {
     // Efek visual saat input mendapatkan fokus
     input.addEventListener('focus', function() {
-      // Sedikit memperbesar wrapper dari input
-      this.closest('.input-wrapper').style.transform = 'scale(1.02)';
+      const wrapper = this.closest('.input-wrapper');
+      if (wrapper) wrapper.style.transform = 'scale(1.02)';
     });
     
     // Mengembalikan ke ukuran normal saat fokus hilang
     input.addEventListener('blur', function() {
-      this.closest('.input-wrapper').style.transform = 'scale(1)';
+      const wrapper = this.closest('.input-wrapper');
+      if (wrapper) wrapper.style.transform = 'scale(1)';
     });
 
     // Memberikan feedback visual validasi secara real-time
     input.addEventListener('input', function() {
       if (this.checkValidity()) {
-        // Jika valid (misalnya, required dan sudah diisi), border menjadi hijau
         this.style.borderColor = '#48bb78';
       } else {
-        // Kembali ke warna border default
         this.style.borderColor = '#72767d';
       }
     });
@@ -103,18 +123,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Interaksi tambahan untuk tombol login
   const loginButton = document.getElementById('loginButton');
-  
-  loginButton.addEventListener('mouseenter', function() {
-    // Efek hover jika tombol tidak dalam keadaan disabled
-    if (!this.disabled) {
-      this.style.transform = 'translateY(-3px)';
-    }
-  });
+  if (loginButton) {
+    loginButton.addEventListener('mouseenter', function() {
+      if (!this.disabled) {
+        this.style.transform = 'translateY(-3px)';
+      }
+    });
 
-  loginButton.addEventListener('mouseleave', function() {
-    // Kembali ke posisi semula saat mouse meninggalkan tombol
-    if (!this.disabled) {
-      this.style.transform = 'translateY(0)';
-    }
-  });
+    loginButton.addEventListener('mouseleave', function() {
+      if (!this.disabled) {
+        this.style.transform = 'translateY(0)';
+      }
+    });
+  }
 });
