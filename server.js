@@ -679,3 +679,6 @@ app.listen(port, () => {
     console.log(`👤 Login Karyawan: jaka@gmail.com / jaka123`);
     console.log(`====================================================`);
 });
+
+module.exports = app;
+
