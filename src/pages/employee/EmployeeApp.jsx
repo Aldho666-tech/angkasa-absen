@@ -47,17 +47,22 @@ export default function EmployeeApp() {
       {/* Mobile Top Header */}
       <header className="emp-mobile-header">
         <div className="emp-mobile-logo">
-          <div className="emp-mobile-logo-icon">
-            <i className="fa-solid fa-plane"></i>
+          <img src="/LOGO.png" alt="Logo" className="emp-logo-img" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          <div className="emp-logo-text-group">
+            <span className="emp-logo-title">Angkasa</span>
+            <span className="emp-logo-badge">Absen</span>
           </div>
-          <span>Angkasa Absen</span>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="emp-mobile-icon-btn" onClick={toggleDarkMode}>
-            <i className={darkMode ? 'fa-solid fa-sun' : 'fa-solid fa-moon'}></i>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button className="emp-mobile-icon-btn" onClick={toggleDarkMode} title="Ganti Tema">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              {darkMode ? 'light_mode' : 'dark_mode'}
+            </span>
           </button>
-          <button className="emp-mobile-icon-btn danger" onClick={handleLogout}>
-            <i className="fa-solid fa-right-from-bracket"></i>
+          <button className="emp-mobile-icon-btn danger" onClick={handleLogout} title="Keluar">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              logout
+            </span>
           </button>
         </div>
       </header>
@@ -101,36 +106,48 @@ export default function EmployeeApp() {
           display: flex;
           align-items: center;
           gap: 10px;
-          font-size: 15px;
+        }
+        .emp-logo-img {
+          height: 32px;
+          width: auto;
+          object-fit: contain;
+        }
+        .emp-logo-text-group {
+          display: flex;
+          flex-direction: column;
+          line-height: 1;
+        }
+        .emp-logo-title {
+          font-size: 16px;
           font-weight: 800;
+          letter-spacing: -0.02em;
           color: var(--text-primary);
         }
-        .emp-mobile-logo-icon {
-          width: 32px;
-          height: 32px;
-          border-radius: 9px;
-          background: linear-gradient(135deg, var(--brand), var(--brand-dark));
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #fff;
-          font-size: 14px;
+        .emp-logo-badge {
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          color: #e11d48;
+          margin-top: 1px;
         }
         .emp-mobile-icon-btn {
-          width: 36px;
-          height: 36px;
-          border-radius: 9px;
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
           border: 1px solid var(--border-color);
-          background: var(--bg-page);
+          background: var(--bg-card);
           color: var(--text-secondary);
-          font-size: 14px;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
           transition: all 0.2s;
         }
-        .emp-mobile-icon-btn.danger { color: var(--brand); border-color: rgba(230,0,0,0.2); }
+        .emp-mobile-icon-btn:hover {
+          background: var(--bg-hover);
+        }
+        .emp-mobile-icon-btn.danger { color: #e11d48; border-color: rgba(225, 29, 72, 0.2); }
         @media (max-width: 768px) {
           .emp-mobile-header { display: flex; }
           .app-main { padding-top: 54px !important; }

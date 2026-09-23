@@ -1,80 +1,23 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <title>Login - Kp Rute</title>
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-  <div class="login-wrapper">
-    <div class="logo-container">
-      <img src="css/asset/LOGO.png" alt="Logo Kp Rute" class="logo-glow" 
-           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-      <div class="logo-placeholder" style="display: none;">
-      </div>
-    </div>
-
-    <div class="login-card">
-      <div class="welcome-section">
-        <h2>Selamat Datang!</h2>
-        <p>Semangat kerjanya, yuk budayakan absen tepat waktu!</p>
-      </div>
-
-      <form class="form-section" onsubmit="handleLogin(event)">
-        <div class="input-group">
-          <label for="username">Username</label>
-          <div class="input-wrapper">
-            <input 
-              type="text" 
-              id="username" 
-              name="username"
-              placeholder="Masukkan username Anda"
-              required
-              autocomplete="username"
-            >
-          </div>
-        </div>
-
-        <div class="input-group">
-          <label for="password">Password</label>
-          <div class="input-wrapper">
-            <input 
-              type="password" 
-              id="password" 
-              name="password"
-              placeholder="Masukkan password Anda"
-              required
-              autocomplete="current-password"
-            >
-          </div>
-        </div>
-
-        <button type="submit" class="login-button" id="loginButton">
-          <div class="button-content">
-            <span id="buttonText">LOGIN</span>
-            <div id="loadingSpinner" class="spinner" style="display: none;"></div>
-          </div>
-        </button>
-
-        <div class="demo-accounts" style="margin-top: 20px; padding: 12px; background: rgba(255,255,255,0.06); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.2); font-size: 13px; text-align: center;">
-          <p style="margin: 0 0 8px 0; color: #a0aec0; font-weight: 500;">Akun Demo Cepat (Klik untuk Isi):</p>
-          <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-            <button type="button" onclick="quickLogin('adminaldo@gmail.com', 'admin123')" style="background: #e53e3e; color: white; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600;">👑 Admin</button>
-            <button type="button" onclick="quickLogin('jaka@gmail.com', 'jaka123')" style="background: #3182ce; color: white; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600;">👤 Karyawan (Jaka)</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <footer>
-    <div class="footer-content">
-      <p>&copy; 2025 Angkasa Express.</p>
-      <p><a href="#">Kebijakan Privasi</a> | <a href="#">Syarat & Ketentuan</a></p>
-    </div>
-  </footer>
-
-  <script src="js/login.js"></script>
-
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#e60000" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="description" content="Angkasa Absen – Sistem Absensi Karyawan Modern" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <title>Angkasa Absen</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>

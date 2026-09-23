@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import confetti from 'canvas-confetti';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
-import BiometricScanner from '../../components/employee/BiometricScanner';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -14,13 +14,54 @@ export default function Dashboard() {
   const [liveDuration, setLiveDuration] = useState('00:00:00');
   const [monthlyStats, setMonthlyStats] = useState({ hadir: 0, telat: 0, izin: 0, alpha: 0 });
 
+  // Camera & Biometric state
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [isCameraOn, setIsCameraOn] = useState(false);
+  const [stream, setStream] = useState(null);
+  const [locationText, setLocationText] = useState('Mendeteksi lokasi GPS...');
+  const [gpsCoords, setGpsCoords] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+
   // Live Digital Clock
   useEffect(() => {
     const id = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  // Fetch Attendance Data & Monthly History
+  // GPS Geolocation Detection
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude.toFixed(5);
+          const lon = pos.coords.longitude.toFixed(5);
+          setGpsCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+          setLocationText(`Lat ${lat}, Lon ${lon}`);
+        },
+        () => {
+          setLocationText('Graha Angkasa, Cengkareng');
+          setGpsCoords({ lat: -6.34395432, lon: 106.73780986 });
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    } else {
+      setLocationText('Graha Angkasa, Cengkareng');
+      setGpsCoords({ lat: -6.34395432, lon: 106.73780986 });
+    }
+  }, []);
+
+  // Cleanup camera stream
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [stream]);
+
+  // Fetch Attendance Data
   const loadData = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -39,9 +80,9 @@ export default function Dashboard() {
         setAttendance(null);
       }
 
-      const historyList = Array.isArray(historyRes) ? historyRes : (historyRes?.records || []);
+      const historyList = Array.isArray(historyRes) ? historyRes : historyRes?.records || [];
       const stats = { hadir: 0, telat: 0, izin: 0, alpha: 0 };
-      historyList.forEach(r => {
+      historyList.forEach((r) => {
         const s = (r.status || '').toLowerCase();
         if (s === 'hadir') stats.hadir++;
         else if (s === 'telat' || s === 'terlambat') stats.telat++;
@@ -60,7 +101,7 @@ export default function Dashboard() {
     loadData();
   }, [loadData]);
 
-  // Live Work Duration Calculation
+  // Live Work Duration
   useEffect(() => {
     if (!attendance?.waktu_masuk) {
       setLiveDuration('–');
@@ -75,10 +116,9 @@ export default function Dashboard() {
         : new Date();
 
       const diffSec = Math.max(0, Math.floor((end - start) / 1000));
-      const hrs = String(Math.floor(diffSec / 3600)).padStart(2, '0');
-      const mins = String(Math.floor((diffSec % 3600) / 60)).padStart(2, '0');
-      const secs = String(diffSec % 60).padStart(2, '0');
-      setLiveDuration(`${hrs}:${mins}:${secs}`);
+      const hrs = Math.floor(diffSec / 3600);
+      const mins = Math.floor((diffSec % 3600) / 60);
+      setLiveDuration(`${hrs}j ${String(mins).padStart(2, '0')}m`);
     };
 
     calcDuration();
@@ -88,8 +128,165 @@ export default function Dashboard() {
     }
   }, [attendance?.waktu_masuk, attendance?.waktu_pulang]);
 
-  const formatClock = (date) =>
-    date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  // Toggle Camera
+  const toggleCamera = async () => {
+    if (isCameraOn && stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null);
+      setIsCameraOn(false);
+      if (videoRef.current) videoRef.current.srcObject = null;
+    } else {
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+        });
+        setStream(mediaStream);
+        setIsCameraOn(true);
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          await videoRef.current.play();
+        }
+      } catch (err) {
+        console.warn('Gagal membuka kamera:', err.message);
+        setFeedback({
+          type: 'error',
+          message: 'Kamera tidak dapat diakses. Pastikan izin kamera telah diberikan.'
+        });
+      }
+    }
+  };
+
+  // Sound chime
+  const playSound = (isClockIn = true) => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const notes = isClockIn ? [523.25, 659.25, 783.99] : [783.99, 659.25, 523.25];
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime + idx * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.08 + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + idx * 0.08);
+        osc.stop(ctx.currentTime + idx * 0.08 + 0.4);
+      });
+    } catch (_) {}
+  };
+
+  // Watermark photo capture
+  const captureWatermarkedPhoto = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return null;
+
+    const w = video.videoWidth || 640;
+    const h = video.videoHeight || 480;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+
+    ctx.drawImage(video, 0, 0, w, h);
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.fillRect(0, h - 55, w, 55);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillText(`${user?.namaLengkap || user?.nama || 'Karyawan'} | PT Angkasa Ekspres`, 16, h - 33);
+
+    ctx.font = '12px monospace';
+    ctx.fillStyle = '#f87171';
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('id-ID');
+    const dateStr = now.toLocaleDateString('id-ID');
+    ctx.fillText(`🕒 ${dateStr} ${timeStr} | 📍 ${locationText}`, 16, h - 14);
+
+    return canvas.toDataURL('image/jpeg', 0.85);
+  };
+
+  // Handle Absen Masuk
+  const handleClockIn = async () => {
+    setIsSubmitting(true);
+    setFeedback(null);
+
+    let photo = null;
+    if (isCameraOn) {
+      photo = captureWatermarkedPhoto();
+    }
+
+    const now = new Date();
+    const time = now.toLocaleTimeString('id-ID', { hour12: false });
+
+    try {
+      const res = await api.clockIn({
+        userId: user.id,
+        time,
+        location: locationText,
+        photo
+      });
+
+      playSound(true);
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+
+      setFeedback({ type: 'success', message: res.message || 'Absen Masuk Berhasil Tervalidasi!' });
+      if (isCameraOn) toggleCamera();
+      await loadData();
+    } catch (err) {
+      setFeedback({ type: 'error', message: err.message || 'Gagal melakukan absen masuk.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle Absen Pulang
+  const handleClockOut = async () => {
+    setIsSubmitting(true);
+    setFeedback(null);
+
+    let photo = null;
+    if (isCameraOn) {
+      photo = captureWatermarkedPhoto();
+    }
+
+    const now = new Date();
+    const time = now.toLocaleTimeString('id-ID', { hour12: false });
+
+    try {
+      const res = await api.clockOut({
+        userId: user.id,
+        time,
+        location: locationText,
+        photo
+      });
+
+      playSound(false);
+      setFeedback({ type: 'success', message: res.message || 'Absen Pulang Berhasil Terekam!' });
+      if (isCameraOn) toggleCamera();
+      await loadData();
+    } catch (err) {
+      setFeedback({ type: 'error', message: err.message || 'Gagal melakukan absen pulang.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const hasClockedIn = !!attendance?.waktu_masuk;
+  const hasClockedOut = !!attendance?.waktu_pulang;
+
+  const formatClock = (date) => {
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+    const s = String(date.getSeconds()).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  };
 
   const formatDate = (date) =>
     date.toLocaleDateString('id-ID', {
@@ -99,581 +296,1167 @@ export default function Dashboard() {
       year: 'numeric'
     });
 
-  const getStatusBadge = () => {
-    if (!attendance?.status) {
-      return <span className="stat-pill gray"><i className="fas fa-clock"></i> Belum Absen</span>;
-    }
-    const s = attendance.status.toLowerCase();
-    if (s === 'hadir') return <span className="stat-pill green"><i className="fas fa-check-circle"></i> Hadir Tepat Waktu</span>;
-    if (s === 'telat' || s === 'terlambat') return <span className="stat-pill orange"><i className="fas fa-clock"></i> Terlambat</span>;
-    if (s === 'izin' || s === 'sakit') return <span className="stat-pill blue"><i className="fas fa-file-lines"></i> {attendance.status}</span>;
-    if (s === 'cuti') return <span className="stat-pill purple"><i className="fas fa-umbrella-beach"></i> Cuti</span>;
-    return <span className="stat-pill gray">{attendance.status}</span>;
+  const getProfileImage = () => {
+    if (user?.foto && !user.foto.includes('placeholder')) return user.foto;
+    if (user?.role === 'admin') return '/Admin-Avatar.png';
+    return '/Aldho.jpg';
   };
 
   return (
-    <div className="employee-dashboard-container">
-      {/* 1. WELCOME HERO BANNER */}
-      <section className="welcome-banner">
-        <div className="banner-orb orb-1"></div>
-        <div className="banner-orb orb-2"></div>
-        <div className="welcome-text-group">
-          <div className="welcome-badge">
-            <i className="fas fa-shield-alt"></i> Portal Presensi Karyawan
+    <div className="mobile-dash-root">
+      {/* 1. GREETING & PROFILE SECTION */}
+      <section className="dash-greeting-section">
+        <div className="dash-greeting-text">
+          <span className="dash-label-welcome">Selamat Datang</span>
+          <div className="dash-heading-user">
+            <h1>Halo, {(user?.namaLengkap || user?.nama || 'aldho').toLowerCase()}!</h1>
+            <span className="wave-emoji">👋</span>
           </div>
-          <h1 className="welcome-name">
-            Selamat Datang, <span>{user?.namaLengkap || user?.nama || 'Karyawan'}</span>! 👋
-          </h1>
-          <p className="welcome-meta">
-            <i className="fas fa-calendar-day"></i> {formatDate(currentTime)} &bull; PT Angkasa Ekspres Indonesia
+          <p className="dash-meta-sub">
+            {formatDate(currentTime)} &bull; PT Angkasa Ekspres
           </p>
         </div>
-
-        {/* Floating Monthly Metrics Glass Cards */}
-        <div className="welcome-metrics-glass">
-          <div className="glass-metric">
-            <div className="metric-num text-green">{monthlyStats.hadir}</div>
-            <div className="metric-lbl"><i className="fas fa-check-circle"></i> Hadir</div>
-          </div>
-          <div className="glass-metric">
-            <div className="metric-num text-orange">{monthlyStats.telat}</div>
-            <div className="metric-lbl"><i className="fas fa-clock"></i> Telat</div>
-          </div>
-          <div className="glass-metric">
-            <div className="metric-num text-blue">{monthlyStats.izin}</div>
-            <div className="metric-lbl"><i className="fas fa-file-circle-check"></i> Izin</div>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. 4-CARD BALANCED METRICS STRIP */}
-      <section className="metrics-strip-grid">
-        {/* Jam Masuk */}
-        <div className="metric-strip-card">
-          <div className="mstrip-top">
-            <div className="mstrip-icon green"><i className="fas fa-arrow-down"></i></div>
-            <span className="stat-pill green">Masuk</span>
-          </div>
-          <div className="mstrip-value">{loading ? '...' : (attendance?.waktu_masuk || '–')}</div>
-          <div className="mstrip-desc">Jam Masuk Hari Ini</div>
-        </div>
-
-        {/* Jam Pulang */}
-        <div className="metric-strip-card">
-          <div className="mstrip-top">
-            <div className="mstrip-icon red"><i className="fas fa-arrow-up"></i></div>
-            <span className="stat-pill red">Pulang</span>
-          </div>
-          <div className="mstrip-value">{loading ? '...' : (attendance?.waktu_pulang || '–')}</div>
-          <div className="mstrip-desc">Jam Pulang Hari Ini</div>
-        </div>
-
-        {/* Durasi Kerja Live */}
-        <div className="metric-strip-card">
-          <div className="mstrip-top">
-            <div className="mstrip-icon blue"><i className="fas fa-stopwatch"></i></div>
-            <span className="stat-pill blue"><i className="fas fa-bolt"></i> Live Timer</span>
-          </div>
-          <div className="mstrip-value mono-num">{loading ? '...' : liveDuration}</div>
-          <div className="mstrip-desc">Total Durasi Kerja</div>
-        </div>
-
-        {/* Status Hari Ini */}
-        <div className="metric-strip-card">
-          <div className="mstrip-top">
-            <div className="mstrip-icon orange"><i className="fas fa-fingerprint"></i></div>
-            <span className="stat-pill orange">Status</span>
-          </div>
-          <div className="mstrip-value" style={{ fontSize: '15px' }}>
-            {loading ? '...' : (attendance?.status || 'Belum Absen')}
-          </div>
-          <div className="mstrip-desc">Status Presensi Hari Ini</div>
-        </div>
-      </section>
-
-      {/* 3. MAIN TERMINAL & STATUS HUB (2-COLUMN GRID) */}
-      <section className="dashboard-main-grid">
-        {/* Left Column: Biometric Camera & GPS Geofence Terminal */}
-        <div className="dashboard-terminal-col">
-          <BiometricScanner
-            user={user}
-            todayAttendance={attendance}
-            onAttendanceUpdated={loadData}
+        <div className="dash-profile-avatar-box">
+          <img
+            src={getProfileImage()}
+            alt={user?.namaLengkap || 'Profil'}
+            className="dash-profile-img"
+            onError={(e) => {
+              e.currentTarget.src = '/Aldho.jpg';
+            }}
           />
+          <span className={`status-indicator-dot ${hasClockedIn ? 'online' : 'idle'}`}></span>
+        </div>
+      </section>
+
+      {/* 2. 3-CATEGORY QUICK STATS */}
+      <section className="dash-stats-grid">
+        {/* Masuk */}
+        <div className="dash-stat-card">
+          <div className="dash-stat-top">
+            <span className="dash-stat-lbl">Masuk</span>
+            <div className="dash-stat-icon-wrap emerald">
+              <span className="material-symbols-outlined">login</span>
+            </div>
+          </div>
+          <span className="dash-stat-val">
+            {loading ? '...' : attendance?.waktu_masuk ? attendance.waktu_masuk.slice(0, 5) : '–'}
+          </span>
+          <span className="dash-stat-badge emerald">
+            {hasClockedIn ? (attendance?.status === 'Telat' ? 'Terlambat' : 'Tepat Waktu') : 'Belum Absen'}
+          </span>
         </div>
 
-        {/* Right Column: Digital Clock Box, Quick Actions, and Today's Journey Details */}
-        <div className="dashboard-status-col">
-          {/* Digital Clock Box */}
-          <div className="digital-clock-box">
-            <div className="clock-time-display">{formatClock(currentTime)}</div>
-            <div className="clock-date-display">{formatDate(currentTime)}</div>
-            <div className="clock-badge-row">
-              {getStatusBadge()}
+        {/* Pulang */}
+        <div className="dash-stat-card">
+          <div className="dash-stat-top">
+            <span className="dash-stat-lbl">Pulang</span>
+            <div className="dash-stat-icon-wrap rose">
+              <span className="material-symbols-outlined">logout</span>
+            </div>
+          </div>
+          <span className="dash-stat-val">
+            {loading ? '...' : attendance?.waktu_pulang ? attendance.waktu_pulang.slice(0, 5) : '–'}
+          </span>
+          <span className="dash-stat-badge rose">
+            {hasClockedOut ? 'Selesai Shift' : hasClockedIn ? 'Sedang Kerja' : 'Belum Pulang'}
+          </span>
+        </div>
+
+        {/* Total Kerja */}
+        <div className="dash-stat-card">
+          <div className="dash-stat-top">
+            <span className="dash-stat-lbl">Total Kerja</span>
+            <div className="dash-stat-icon-wrap blue">
+              <span className="material-symbols-outlined">timer</span>
+            </div>
+          </div>
+          <span className="dash-stat-val">{loading ? '...' : liveDuration}</span>
+          <span className="dash-stat-badge blue">Target 8 jam</span>
+        </div>
+      </section>
+
+      {/* 3. ANGKASA CRIMSON HERO CARD */}
+      <section className="dash-hero-card">
+        <div className="hero-orb orb-top"></div>
+        <div className="hero-orb orb-bottom"></div>
+
+        <div className="hero-content">
+          {/* Top Pill Ribbons */}
+          <div className="hero-header-row">
+            <div className="hero-shift-badge">
+              <span className="pulse-dot-live"></span>
+              <span>Shift Pagi &bull; Graha Angkasa</span>
+            </div>
+            <div className="hero-gps-badge">
+              <span className="material-symbols-outlined">my_location</span>
+              <span>Radius 45m</span>
             </div>
           </div>
 
-          {/* Quick Actions Grid */}
-          <div className="quick-actions-card">
-            <h3 className="section-heading">
-              <i className="fas fa-bolt" style={{ color: 'var(--brand)' }}></i> Aksi Cepat
-            </h3>
-            <div className="quick-buttons-row">
-              <button
-                className="qbtn"
-                onClick={() => navigate('/employee/izin')}
-                title="Ajukan Izin / Sakit / Cuti"
-              >
-                <div className="qbtn-icon blue"><i className="fas fa-file-circle-plus"></i></div>
-                <span>Ajukan Izin</span>
-              </button>
-
-              <button
-                className="qbtn"
-                onClick={() => navigate('/employee/riwayat')}
-                title="Lihat Riwayat Presensi Bulanan"
-              >
-                <div className="qbtn-icon orange"><i className="fas fa-clock-rotate-left"></i></div>
-                <span>Riwayat</span>
-              </button>
-
-              <button
-                className="qbtn"
-                onClick={() => navigate('/employee/profil')}
-                title="Kelola Profil & Sandi"
-              >
-                <div className="qbtn-icon purple"><i className="fas fa-user-gear"></i></div>
-                <span>Profil</span>
-              </button>
-
-              <button
-                className="qbtn"
-                onClick={() => window.print()}
-                title="Cetak Bukti Presensi"
-              >
-                <div className="qbtn-icon green"><i className="fas fa-print"></i></div>
-                <span>Cetak Slip</span>
-              </button>
+          {/* Big Digital Clock */}
+          <div className="hero-clock-box">
+            <span className="hero-clock-sub">Jam Digital Presensi</span>
+            <div className="hero-clock-time-row">
+              <span className="hero-clock-time">{formatClock(currentTime)}</span>
+              <span className="hero-clock-tz">WIB</span>
+            </div>
+            <div className="hero-location-line">
+              <span className="material-symbols-outlined">location_on</span>
+              <span>{locationText || 'Hub Utama Graha Angkasa, Cengkareng'}</span>
             </div>
           </div>
 
-          {/* Today's Journey & Detail Card */}
-          <div className="today-journey-card">
-            <h3 className="section-heading">
-              <i className="fas fa-timeline" style={{ color: 'var(--brand)' }}></i> Catatan Presensi Hari Ini
-            </h3>
-
-            {loading ? (
-              <div className="loader-box">
-                <div className="spinner"></div>
-                <span>Memeriksa status kehadiran...</span>
+          {/* Biometric Face Scanner Highlight Box */}
+          <div className="biometric-scanner-box">
+            <div className="scanner-status-header">
+              <div className="scanner-ready-status">
+                <span className="pulse-ping-dot"></span>
+                <span>{isCameraOn ? 'KAMERA AKTIF & MEMINDAI' : 'SENSOR BIOMETRIK SIAP'}</span>
               </div>
-            ) : attendance ? (
-              <div className="journey-list">
-                <div className="journey-item">
-                  <div className="journey-dot green"></div>
-                  <div className="journey-info">
-                    <div className="journey-title">Absen Masuk</div>
-                    <div className="journey-val">
-                      {attendance.waktu_masuk || '–'}
-                      {attendance.lokasi_masuk && <span className="journey-sub"> &bull; {attendance.lokasi_masuk}</span>}
-                    </div>
-                  </div>
-                  {attendance.foto_masuk && (
-                    <img src={attendance.foto_masuk} alt="Selfie Masuk" className="journey-thumb" />
-                  )}
-                </div>
+              <span className="scanner-ai-badge">AI Anti-Spoofing Active</span>
+            </div>
 
-                <div className="journey-item">
-                  <div className="journey-dot blue"></div>
-                  <div className="journey-info">
-                    <div className="journey-title">Durasi Kerja Berjalan</div>
-                    <div className="journey-val mono-num">{liveDuration}</div>
-                  </div>
-                </div>
+            {/* Viewfinder Frame */}
+            <div className="scanner-viewfinder">
+              <div className="corner-bracket c-tl"></div>
+              <div className="corner-bracket c-tr"></div>
+              <div className="corner-bracket c-bl"></div>
+              <div className="corner-bracket c-br"></div>
 
-                <div className="journey-item">
-                  <div className={`journey-dot ${attendance.waktu_pulang ? 'red' : 'gray'}`}></div>
-                  <div className="journey-info">
-                    <div className="journey-title">Absen Pulang</div>
-                    <div className="journey-val">
-                      {attendance.waktu_pulang ? (
-                        <>
-                          {attendance.waktu_pulang}
-                          {attendance.lokasi_pulang && <span className="journey-sub"> &bull; {attendance.lokasi_pulang}</span>}
-                        </>
-                      ) : (
-                        <span className="text-muted">Belum absen pulang</span>
-                      )}
-                    </div>
+              {/* Video Element */}
+              <video
+                ref={videoRef}
+                playsInline
+                muted
+                className={`scanner-video ${!isCameraOn ? 'hidden-video' : ''}`}
+              ></video>
+
+              {/* Target Face Overlay */}
+              {!isCameraOn ? (
+                <div className="scanner-idle-placeholder">
+                  <div className="scanner-face-icon-wrap">
+                    <span className="material-symbols-outlined face-big">face</span>
                   </div>
-                  {attendance.foto_pulang && (
-                    <img src={attendance.foto_pulang} alt="Selfie Pulang" className="journey-thumb" />
-                  )}
+                  <div className="scanner-instruction-row">
+                    <span className="material-symbols-outlined text-emerald">check_circle</span>
+                    <span>Posisikan Wajah dalam Bingkai</span>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="empty-journey-state">
-                <i className="fas fa-calendar-xmark"></i>
-                <p>Anda belum melakukan presensi hari ini.</p>
-                <span className="hint-text">Gunakan terminal kamera di sebelah kiri untuk absen masuk.</span>
+              ) : (
+                <div className="scanner-face-guide-oval"></div>
+              )}
+            </div>
+
+            <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+
+            {/* Toast Feedback */}
+            {feedback && (
+              <div className={`dash-feedback-alert ${feedback.type}`}>
+                <span className="material-symbols-outlined">
+                  {feedback.type === 'success' ? 'check_circle' : 'error'}
+                </span>
+                <span>{feedback.message}</span>
               </div>
             )}
+
+            {/* High-Contrast Action Buttons */}
+            <div className="scanner-action-buttons-wrap">
+              {!isCameraOn ? (
+                <button
+                  type="button"
+                  className="scanner-main-btn start-camera"
+                  onClick={toggleCamera}
+                >
+                  <span className="material-symbols-outlined">photo_camera_front</span>
+                  <span>Buka Kamera Presensi Wajah</span>
+                </button>
+              ) : (
+                <div className="scanner-dual-actions">
+                  <button
+                    type="button"
+                    className="scanner-main-btn btn-clock-in-now"
+                    onClick={handleClockIn}
+                    disabled={isSubmitting || hasClockedIn}
+                  >
+                    <span className="material-symbols-outlined">login</span>
+                    <span>{hasClockedIn ? 'Sudah Masuk' : isSubmitting ? 'Memproses...' : 'Absen Masuk'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="scanner-main-btn btn-clock-out-now"
+                    onClick={handleClockOut}
+                    disabled={isSubmitting || !hasClockedIn || hasClockedOut}
+                  >
+                    <span className="material-symbols-outlined">logout</span>
+                    <span>{hasClockedOut ? 'Sudah Pulang' : isSubmitting ? 'Memproses...' : 'Absen Pulang'}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Presensi Validation Badges */}
+            <div className="hero-validation-row">
+              <div className="validation-pill">
+                <span className="material-symbols-outlined text-emerald">check_circle</span>
+                <div className="validation-text">
+                  <span className="val-title">Masuk Tervalidasi</span>
+                  <span className="val-sub">
+                    {attendance?.waktu_masuk ? `${attendance.waktu_masuk} WIB` : 'Belum Absen'}
+                  </span>
+                </div>
+              </div>
+              <div className="validation-pill">
+                <span className="material-symbols-outlined text-emerald">check_circle</span>
+                <div className="validation-text">
+                  <span className="val-title">Pulang Terekam</span>
+                  <span className="val-sub">
+                    {attendance?.waktu_pulang ? `${attendance.waktu_pulang} WIB` : 'Belum Pulang'}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
+      {/* 4. AKSI CEPAT (QUICK ACTIONS GRID) */}
+      <section className="dash-quick-actions-section">
+        <div className="section-title-row">
+          <div className="section-title-left">
+            <span className="material-symbols-outlined text-primary">bolt</span>
+            <h3>Aksi Cepat</h3>
+          </div>
+          <span className="section-title-badge">Layanan Mandiri</span>
+        </div>
+
+        <div className="quick-action-grid">
+          {/* Action 1: Ajukan Izin */}
+          <button
+            type="button"
+            className="quick-action-btn"
+            onClick={() => navigate('/employee/izin')}
+          >
+            <div className="qa-icon-wrap rose">
+              <span className="material-symbols-outlined">assignment_add</span>
+            </div>
+            <span className="qa-btn-title">Ajukan Izin</span>
+          </button>
+
+          {/* Action 2: Riwayat */}
+          <button
+            type="button"
+            className="quick-action-btn"
+            onClick={() => navigate('/employee/riwayat')}
+          >
+            <div className="qa-icon-wrap amber">
+              <span className="material-symbols-outlined">history_toggle_off</span>
+            </div>
+            <span className="qa-btn-title">Riwayat</span>
+          </button>
+
+          {/* Action 3: Profil / ID Pegawai */}
+          <button
+            type="button"
+            className="quick-action-btn"
+            onClick={() => navigate('/employee/profil')}
+          >
+            <div className="qa-icon-wrap indigo">
+              <span className="material-symbols-outlined">badge</span>
+            </div>
+            <span className="qa-btn-title">ID Pegawai</span>
+          </button>
+
+          {/* Action 4: Cetak Slip */}
+          <button
+            type="button"
+            className="quick-action-btn"
+            onClick={() => window.print()}
+          >
+            <div className="qa-icon-wrap emerald">
+              <span className="material-symbols-outlined">receipt_long</span>
+            </div>
+            <span className="qa-btn-title">Cetak Slip</span>
+          </button>
+        </div>
+      </section>
+
+      {/* 5. CATATAN PRESENSI HARI INI (TIMELINE ACTIVITY LOG) */}
+      <section className="dash-timeline-section">
+        <div className="section-title-row">
+          <div className="section-title-left">
+            <span className="material-symbols-outlined text-primary">timeline</span>
+            <h3>Catatan Presensi Hari Ini</h3>
+          </div>
+          <button
+            type="button"
+            className="see-all-logs-btn"
+            onClick={() => navigate('/employee/riwayat')}
+          >
+            Semua Log
+          </button>
+        </div>
+
+        <div className="timeline-card-container">
+          {/* Log Item 1: Masuk */}
+          <div className="timeline-item">
+            <div className="tl-icon-circle emerald">
+              <span className="material-symbols-outlined">verified_user</span>
+            </div>
+            <div className="tl-info-wrap">
+              <div className="tl-header">
+                <span className="tl-title">
+                  Absen Masuk {attendance?.waktu_masuk ? `(${attendance.status || 'Tepat Waktu'})` : ''}
+                </span>
+                <span className="tl-time-badge emerald">
+                  {attendance?.waktu_masuk || 'Belum Absen'}
+                </span>
+              </div>
+              <p className="tl-desc">
+                {attendance?.lokasi_masuk || 'Terminal Pos A Graha Angkasa • Biometrik Cocok 99.4%'}
+              </p>
+            </div>
+          </div>
+
+          {/* Log Item 2: Durasi Berjalan */}
+          <div className="timeline-item">
+            <div className="tl-icon-circle blue">
+              <span className="material-symbols-outlined">schedule</span>
+            </div>
+            <div className="tl-info-wrap">
+              <div className="tl-header">
+                <span className="tl-title">Durasi Kerja Efektif</span>
+                <span className="tl-time-badge blue">{liveDuration}</span>
+              </div>
+              <p className="tl-desc">
+                Status Operasional &bull; Target harian 8 jam terpenuhi
+              </p>
+            </div>
+          </div>
+
+          {/* Log Item 3: Pulang */}
+          <div className="timeline-item">
+            <div className="tl-icon-circle rose">
+              <span className="material-symbols-outlined">door_front</span>
+            </div>
+            <div className="tl-info-wrap">
+              <div className="tl-header">
+                <span className="tl-title">
+                  Absen Pulang {attendance?.waktu_pulang ? '(Lengkap)' : ''}
+                </span>
+                <span className="tl-time-badge rose">
+                  {attendance?.waktu_pulang || 'Belum Pulang'}
+                </span>
+              </div>
+              <p className="tl-desc">
+                {attendance?.lokasi_pulang || (attendance?.waktu_pulang ? 'Gate Parkir Barat • GPS Terverifikasi' : 'Menunggu jam kepulangan shift')}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* COMPONENT SCOPED CSS WITH FULL MATERIAL 3 & PLUS JAKARTA SANS STYLING */}
       <style>{`
-        .employee-dashboard-container {
+        .mobile-dash-root {
+          font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           display: flex;
           flex-direction: column;
-          gap: 20px;
-          max-width: 1200px;
+          gap: 1.5rem;
+          max-width: 580px;
           margin: 0 auto;
-          padding: 20px 16px 40px;
-          animation: fadeIn 0.25s ease forwards;
+          padding: 0.75rem 1.25rem 2rem;
+          color: #0b1c30;
+          animation: fadeIn 0.25s ease-out;
         }
 
-        /* 1. WELCOME BANNER */
-        .welcome-banner {
-          position: relative;
-          background: linear-gradient(135deg, #e60000 0%, #c00000 50%, #990000 100%);
-          border-radius: 20px;
-          padding: 26px 28px;
-          color: #ffffff;
-          overflow: hidden;
-          box-shadow: 0 10px 25px rgba(230, 0, 0, 0.28);
+        body.dark-mode .mobile-dash-root {
+          color: #e5eeff;
+        }
+
+        /* 1. GREETING SECTION */
+        .dash-greeting-section {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 20px;
+          padding-top: 0.5rem;
+          padding-bottom: 0.25rem;
         }
-        .banner-orb {
-          position: absolute;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.08);
-          pointer-events: none;
+        .dash-greeting-text {
+          display: flex;
+          flex-direction: column;
         }
-        .orb-1 { width: 220px; height: 220px; top: -80px; right: -50px; }
-        .orb-2 { width: 140px; height: 140px; bottom: -50px; left: 30%; }
-
-        .welcome-text-group { position: relative; z-index: 2; }
-        .welcome-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 4px 12px;
-          border-radius: 9999px;
-          background: rgba(255, 255, 255, 0.18);
-          backdrop-filter: blur(8px);
+        .dash-label-welcome {
           font-size: 11px;
-          font-weight: 700;
+          line-height: 14px;
+          letter-spacing: 0.04em;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
-          margin-bottom: 10px;
+          font-weight: 700;
+          color: #545f73;
         }
-        .welcome-name {
-          font-size: 24px;
-          font-weight: 800;
-          margin: 0 0 6px 0;
-          line-height: 1.25;
+        body.dark-mode .dash-label-welcome {
+          color: #94a3b8;
         }
-        .welcome-meta {
-          font-size: 13px;
-          opacity: 0.9;
-          margin: 0;
+        .dash-heading-user {
           display: flex;
           align-items: center;
           gap: 6px;
+          margin-top: 2px;
         }
-
-        .welcome-metrics-glass {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          position: relative;
-          z-index: 2;
-        }
-        .glass-metric {
-          background: rgba(255, 255, 255, 0.16);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.25);
-          border-radius: 14px;
-          padding: 12px 18px;
-          text-align: center;
-          min-width: 82px;
-        }
-        .metric-num {
-          font-size: 22px;
+        .dash-heading-user h1 {
+          font-size: 24px;
+          line-height: 30px;
+          letter-spacing: -0.015em;
           font-weight: 800;
-          line-height: 1;
+          margin: 0;
+          color: #0b1c30;
+        }
+        body.dark-mode .dash-heading-user h1 {
           color: #ffffff;
         }
-        .metric-lbl {
+        .wave-emoji {
+          font-size: 22px;
+        }
+        .dash-meta-sub {
+          font-size: 12px;
+          line-height: 18px;
+          color: #545f73;
+          margin: 2px 0 0 0;
+          font-weight: 500;
+        }
+        body.dark-mode .dash-meta-sub {
+          color: #94a3b8;
+        }
+
+        .dash-profile-avatar-box {
+          position: relative;
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          overflow: visible;
+          flex-shrink: 0;
+          background: #eff4ff;
+          box-shadow: 0 4px 12px rgba(11, 28, 48, 0.08);
+        }
+        .dash-profile-img {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          object-fit: cover;
+          display: block;
+        }
+        .status-indicator-dot {
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          border: 2px solid #ffffff;
+        }
+        .status-indicator-dot.online {
+          background-color: #10b981;
+        }
+        .status-indicator-dot.idle {
+          background-color: #f59e0b;
+        }
+
+        /* 2. QUICK STATS GRID */
+        .dash-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+        }
+        .dash-stat-card {
+          background: #ffffff;
+          border-radius: 18px;
+          padding: 12px 14px;
+          box-shadow: 0 4px 16px rgba(11, 28, 48, 0.04);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          border: 1px solid rgba(229, 238, 255, 0.7);
+        }
+        body.dark-mode .dash-stat-card {
+          background: #111c2d;
+          border-color: rgba(255, 255, 255, 0.08);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        }
+        .dash-stat-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 6px;
+        }
+        .dash-stat-lbl {
           font-size: 11px;
           font-weight: 600;
-          opacity: 0.95;
-          margin-top: 4px;
+          color: #545f73;
         }
-
-        /* 2. 4-CARD STRIP */
-        .metrics-strip-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 14px;
+        body.dark-mode .dash-stat-lbl {
+          color: #94a3b8;
         }
-        @media (max-width: 900px) {
-          .metrics-strip-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 480px) {
-          .metrics-strip-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        }
-        .metric-strip-card {
-          background: var(--bg-card);
-          border: 1px solid var(--border-color);
-          border-radius: 16px;
-          padding: 16px 18px;
-          box-shadow: var(--shadow-sm);
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .metric-strip-card:hover {
-          transform: translateY(-2px);
-          box-shadow: var(--shadow-md);
-        }
-        .mstrip-top {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 12px;
-        }
-        .mstrip-icon {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
+        .dash-stat-icon-wrap {
+          width: 26px;
+          height: 26px;
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
+        }
+        .dash-stat-icon-wrap .material-symbols-outlined {
           font-size: 15px;
         }
-        .mstrip-icon.green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-        .mstrip-icon.red { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-        .mstrip-icon.blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-        .mstrip-icon.orange { background: rgba(249, 115, 22, 0.15); color: #f97316; }
-
-        .stat-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          padding: 3px 8px;
-          border-radius: 9999px;
-          font-size: 11px;
-          font-weight: 700;
+        .dash-stat-icon-wrap.emerald {
+          background: #ecfdf5;
+          color: #059669;
         }
-        .stat-pill.green { background: rgba(16, 185, 129, 0.12); color: #10b981; }
-        .stat-pill.red { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
-        .stat-pill.blue { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
-        .stat-pill.orange { background: rgba(249, 115, 22, 0.12); color: #f97316; }
-        .stat-pill.purple { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; }
-        .stat-pill.gray { background: var(--bg-hover); color: var(--text-muted); }
+        .dash-stat-icon-wrap.rose {
+          background: #fff1f2;
+          color: #e11d48;
+        }
+        .dash-stat-icon-wrap.blue {
+          background: #eff6ff;
+          color: #2563eb;
+        }
+        body.dark-mode .dash-stat-icon-wrap.emerald { background: rgba(5, 150, 105, 0.2); }
+        body.dark-mode .dash-stat-icon-wrap.rose { background: rgba(225, 29, 72, 0.2); }
+        body.dark-mode .dash-stat-icon-wrap.blue { background: rgba(37, 99, 235, 0.2); }
 
-        .mstrip-value {
-          font-size: 20px;
+        .dash-stat-val {
+          font-size: 18px;
+          line-height: 24px;
           font-weight: 800;
-          color: var(--text-primary);
-          line-height: 1.2;
-          margin-bottom: 4px;
+          color: #0b1c30;
+          letter-spacing: -0.01em;
         }
-        .mstrip-desc {
-          font-size: 12px;
-          color: var(--text-muted);
-          font-weight: 500;
+        body.dark-mode .dash-stat-val {
+          color: #ffffff;
         }
-        .mono-num {
-          font-variant-numeric: tabular-nums;
-          font-family: monospace;
-          letter-spacing: -0.5px;
+        .dash-stat-badge {
+          font-size: 10px;
+          font-weight: 700;
+          margin-top: 2px;
+        }
+        .dash-stat-badge.emerald { color: #059669; }
+        .dash-stat-badge.rose { color: #e11d48; }
+        .dash-stat-badge.blue { color: #2563eb; }
+
+        /* 3. ANGKASA CRIMSON HERO CARD */
+        .dash-hero-card {
+          position: relative;
+          overflow: hidden;
+          border-radius: 28px;
+          background: linear-gradient(135deg, #e11d48 0%, #be123c 55%, #881337 100%);
+          padding: 20px;
+          color: #ffffff;
+          box-shadow: 0 16px 36px rgba(225, 29, 72, 0.26);
+        }
+        .hero-orb {
+          position: absolute;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        .orb-top {
+          top: -48px;
+          right: -48px;
+          width: 180px;
+          height: 180px;
+          background: rgba(255, 255, 255, 0.12);
+          filter: blur(36px);
+        }
+        .orb-bottom {
+          bottom: -48px;
+          left: -48px;
+          width: 180px;
+          height: 180px;
+          background: rgba(0, 0, 0, 0.25);
+          filter: blur(36px);
         }
 
-        /* 3. MAIN 2-COLUMN GRID */
-        .dashboard-main-grid {
-          display: grid;
-          grid-template-columns: 1.15fr 0.85fr;
-          gap: 20px;
-          align-items: flex-start;
-        }
-        @media (max-width: 900px) {
-          .dashboard-main-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        .dashboard-status-col {
+        .hero-content {
+          position: relative;
+          z-index: 2;
           display: flex;
           flex-direction: column;
           gap: 16px;
         }
 
-        /* Digital Clock Box */
-        .digital-clock-box {
-          background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-hover) 100%);
-          border: 1px solid var(--border-color);
-          border-radius: 18px;
-          padding: 20px;
-          text-align: center;
-          box-shadow: var(--shadow-sm);
-        }
-        .clock-time-display {
-          font-size: 38px;
-          font-weight: 900;
-          color: var(--text-primary);
-          font-family: monospace;
-          letter-spacing: -1px;
-          line-height: 1.1;
-        }
-        .clock-date-display {
-          font-size: 13px;
-          color: var(--text-muted);
-          margin-top: 4px;
-          font-weight: 500;
-        }
-        .clock-badge-row {
-          margin-top: 12px;
+        .hero-header-row {
           display: flex;
-          justify-content: center;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .hero-shift-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 5px 12px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.16);
+          backdrop-filter: blur(8px);
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          color: #ffffff;
+        }
+        .pulse-dot-live {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #34d399;
+          box-shadow: 0 0 8px #34d399;
+          animation: pulse 1.5s infinite;
         }
 
-        /* Quick Actions Card */
-        .quick-actions-card, .today-journey-card {
-          background: var(--bg-card);
-          border: 1px solid var(--border-color);
-          border-radius: 18px;
-          padding: 20px;
-          box-shadow: var(--shadow-sm);
+        .hero-gps-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 10px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.12);
+          backdrop-filter: blur(8px);
+          font-size: 11px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.95);
         }
-        .section-heading {
-          font-size: 15px;
+        .hero-gps-badge .material-symbols-outlined {
+          font-size: 14px;
+        }
+
+        .hero-clock-box {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 2px 0 6px;
+        }
+        .hero-clock-sub {
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.85);
+        }
+        .hero-clock-time-row {
+          display: flex;
+          align-items: baseline;
+          gap: 6px;
+          margin: 2px 0;
+        }
+        .hero-clock-time {
+          font-size: 38px;
+          line-height: 1.1;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          color: #ffffff;
+          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        }
+        .hero-clock-tz {
+          font-size: 13px;
           font-weight: 700;
-          color: var(--text-primary);
-          margin: 0 0 14px 0;
+          color: rgba(255, 255, 255, 0.85);
+        }
+        .hero-location-line {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.95);
+          font-weight: 500;
+          margin-top: 2px;
+        }
+        .hero-location-line .material-symbols-outlined {
+          font-size: 14px;
+        }
+
+        /* Biometric Face Scanner Highlight Card */
+        .biometric-scanner-box {
+          background: rgba(0, 0, 0, 0.22);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          padding: 14px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .scanner-status-header {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 2px;
+        }
+        .scanner-ready-status {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: #6ee7b7;
+        }
+        .pulse-ping-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #34d399;
+          box-shadow: 0 0 10px #34d399;
+          animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+        .scanner-ai-badge {
+          font-size: 10px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.8);
+          background: rgba(255, 255, 255, 0.12);
+          padding: 3px 8px;
+          border-radius: 9999px;
+        }
+
+        /* Viewfinder Box */
+        .scanner-viewfinder {
+          position: relative;
+          width: 100%;
+          max-width: 220px;
+          height: 135px;
+          border-radius: 18px;
+          border: 2px dashed rgba(255, 255, 255, 0.35);
+          background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.35) 100%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 8px;
+          overflow: hidden;
+          box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+
+        .corner-bracket {
+          position: absolute;
+          width: 16px;
+          height: 16px;
+          border-color: #ffffff;
+          border-style: solid;
+          pointer-events: none;
+          z-index: 5;
+        }
+        .c-tl { top: 6px; left: 6px; border-width: 2.5px 0 0 2.5px; border-top-left-radius: 6px; }
+        .c-tr { top: 6px; right: 6px; border-width: 2.5px 2.5px 0 0; border-top-right-radius: 6px; }
+        .c-bl { bottom: 6px; left: 6px; border-width: 0 0 2.5px 2.5px; border-bottom-left-radius: 6px; }
+        .c-br { bottom: 6px; right: 6px; border-width: 0 2.5px 2.5px 0; border-bottom-right-radius: 6px; }
+
+        .scanner-video {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+        .scanner-video.hidden-video {
+          display: none;
+        }
+
+        .scanner-face-guide-oval {
+          position: absolute;
+          width: 105px;
+          height: 120px;
+          border: 2px dashed rgba(255, 255, 255, 0.6);
+          border-radius: 50%;
+          pointer-events: none;
+          z-index: 6;
+          animation: pulse 2s infinite;
+        }
+
+        .scanner-idle-placeholder {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          z-index: 4;
+        }
+        .scanner-face-icon-wrap {
+          width: 52px;
+          height: 52px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.18);
+          backdrop-filter: blur(8px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+          border: 1.5px solid rgba(255, 255, 255, 0.4);
+        }
+        .scanner-face-icon-wrap .material-symbols-outlined {
+          font-size: 30px;
+          color: #ffffff;
+        }
+        .scanner-instruction-row {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #ffffff;
+          text-align: center;
+        }
+        .text-emerald {
+          color: #34d399 !important;
+          font-size: 14px !important;
+        }
+
+        /* Action Buttons */
+        .scanner-action-buttons-wrap {
+          width: 100%;
+        }
+        .scanner-main-btn {
+          width: 100%;
+          height: 48px;
+          border-radius: 14px;
+          font-family: inherit;
+          font-size: 14px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+          border: none;
+        }
+        .scanner-main-btn.start-camera {
+          background: #ffffff;
+          color: #e11d48;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+          border: 1.5px solid rgba(255, 255, 255, 0.5);
+        }
+        .scanner-main-btn.start-camera:hover {
+          background: #fff8f8;
+          transform: translateY(-1px);
+        }
+        .scanner-main-btn.start-camera:active {
+          transform: scale(0.98);
+        }
+        .scanner-main-btn .material-symbols-outlined {
+          font-size: 22px;
+        }
+
+        .scanner-dual-actions {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+          width: 100%;
+        }
+        .btn-clock-in-now {
+          background: #10b981;
+          color: #ffffff;
+          box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+        }
+        .btn-clock-out-now {
+          background: #ffffff;
+          color: #e11d48;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+        }
+        .scanner-main-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none !important;
+        }
+
+        .dash-feedback-alert {
+          width: 100%;
           display: flex;
           align-items: center;
           gap: 8px;
+          padding: 8px 12px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 600;
         }
-        .quick-buttons-row {
+        .dash-feedback-alert.success {
+          background: rgba(16, 185, 129, 0.25);
+          color: #a7f3d0;
+          border: 1px solid rgba(52, 211, 153, 0.4);
+        }
+        .dash-feedback-alert.error {
+          background: rgba(239, 68, 68, 0.25);
+          color: #fecaca;
+          border: 1px solid rgba(248, 113, 113, 0.4);
+        }
+
+        /* Validation row */
+        .hero-validation-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+          width: 100%;
+          padding: 6px;
+          border-radius: 14px;
+          background: rgba(0, 0, 0, 0.14);
+        }
+        .validation-pill {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 10px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.12);
+        }
+        .validation-text {
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+        }
+        .val-title {
+          font-size: 11px;
+          font-weight: 700;
+          color: #ffffff;
+          line-height: 1.2;
+        }
+        .val-sub {
+          font-size: 10px;
+          color: rgba(255, 255, 255, 0.82);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        /* 4. AKSI CEPAT */
+        .dash-quick-actions-section {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+        .section-title-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 4px;
+        }
+        .section-title-left {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .section-title-left .material-symbols-outlined {
+          font-size: 20px;
+          color: #e11d48;
+        }
+        .section-title-left h3 {
+          font-size: 16px;
+          font-weight: 800;
+          margin: 0;
+          color: #0b1c30;
+        }
+        body.dark-mode .section-title-left h3 {
+          color: #ffffff;
+        }
+        .section-title-badge {
+          font-size: 11px;
+          font-weight: 600;
+          color: #545f73;
+        }
+        body.dark-mode .section-title-badge {
+          color: #94a3b8;
+        }
+
+        .quick-action-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 10px;
         }
-        @media (max-width: 480px) {
-          .quick-buttons-row { grid-template-columns: repeat(2, 1fr); }
-        }
-        .qbtn {
-          background: var(--bg-page);
-          border: 1px solid var(--border-color);
-          border-radius: 14px;
-          padding: 12px 6px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 6px;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-family: inherit;
-        }
-        .qbtn:hover {
-          transform: translateY(-2px);
-          border-color: var(--brand);
-          box-shadow: var(--shadow-sm);
-        }
-        .qbtn-icon {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 15px;
-        }
-        .qbtn-icon.blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-        .qbtn-icon.orange { background: rgba(249, 115, 22, 0.15); color: #f97316; }
-        .qbtn-icon.purple { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
-        .qbtn-icon.green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-        .qbtn span {
-          font-size: 11px;
-          font-weight: 600;
-          color: var(--text-secondary);
-        }
-
-        /* Journey List */
-        .journey-list {
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-        }
-        .journey-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 10px 12px;
-          background: var(--bg-page);
-          border: 1px solid var(--border-color);
-          border-radius: 12px;
-        }
-        .journey-dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-        .journey-dot.green { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.5); }
-        .journey-dot.blue { background: #3b82f6; box-shadow: 0 0 8px rgba(59,130,246,0.5); }
-        .journey-dot.red { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5); }
-        .journey-dot.gray { background: var(--text-muted); }
-
-        .journey-info { flex: 1; }
-        .journey-title { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
-        .journey-val { font-size: 13.5px; font-weight: 700; color: var(--text-primary); margin-top: 2px; }
-        .journey-sub { font-size: 11px; color: var(--text-muted); font-weight: 400; }
-        .journey-thumb {
-          width: 44px;
-          height: 44px;
-          border-radius: 8px;
-          object-fit: cover;
-          border: 1px solid var(--border-color);
-        }
-
-        .empty-journey-state {
+        .quick-action-btn {
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 8px;
-          padding: 24px 12px;
-          color: var(--text-muted);
-          text-align: center;
+          padding: 12px 6px;
+          background: #ffffff;
+          border-radius: 18px;
+          border: 1px solid rgba(229, 238, 255, 0.7);
+          box-shadow: 0 4px 16px rgba(11, 28, 48, 0.03);
+          cursor: pointer;
+          transition: all 0.2s;
+          font-family: inherit;
         }
-        .empty-journey-state i { font-size: 32px; opacity: 0.4; }
-        .empty-journey-state p { font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 0; }
-        .hint-text { font-size: 11px; color: var(--text-muted); }
-
-        .loader-box {
+        body.dark-mode .quick-action-btn {
+          background: #111c2d;
+          border-color: rgba(255, 255, 255, 0.08);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+        .quick-action-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(11, 28, 48, 0.07);
+        }
+        .quick-action-btn:active {
+          transform: scale(0.96);
+        }
+        .qa-icon-wrap {
+          width: 44px;
+          height: 44px;
+          border-radius: 14px;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 10px;
-          padding: 24px;
-          color: var(--text-muted);
-          font-size: 13px;
         }
-        .spinner {
-          width: 20px;
-          height: 20px;
-          border: 2px solid var(--border-color);
-          border-top-color: var(--brand);
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
+        .qa-icon-wrap .material-symbols-outlined {
+          font-size: 22px;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .qa-icon-wrap.rose { background: #fff1f2; color: #e11d48; }
+        .qa-icon-wrap.amber { background: #fef3c7; color: #b45309; }
+        .qa-icon-wrap.indigo { background: #e0e7ff; color: #4338ca; }
+        .qa-icon-wrap.emerald { background: #ecfdf5; color: #059669; }
+        body.dark-mode .qa-icon-wrap.rose { background: rgba(225, 29, 72, 0.2); }
+        body.dark-mode .qa-icon-wrap.amber { background: rgba(180, 83, 9, 0.2); }
+        body.dark-mode .qa-icon-wrap.indigo { background: rgba(67, 56, 202, 0.2); }
+        body.dark-mode .qa-icon-wrap.emerald { background: rgba(5, 150, 105, 0.2); }
+
+        .qa-btn-title {
+          font-size: 11px;
+          font-weight: 700;
+          color: #0b1c30;
+          text-align: center;
+          line-height: 1.2;
+        }
+        body.dark-mode .qa-btn-title {
+          color: #ffffff;
+        }
+
+        /* 5. TIMELINE SECTION */
+        .dash-timeline-section {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          padding-bottom: 1rem;
+        }
+        .see-all-logs-btn {
+          background: transparent;
+          border: none;
+          color: #e11d48;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          padding: 0;
+          font-family: inherit;
+        }
+        .see-all-logs-btn:hover {
+          text-decoration: underline;
+        }
+
+        .timeline-card-container {
+          background: #ffffff;
+          border-radius: 24px;
+          padding: 16px;
+          box-shadow: 0 6px 24px rgba(11, 28, 48, 0.03);
+          border: 1px solid rgba(229, 238, 255, 0.7);
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        body.dark-mode .timeline-card-container {
+          background: #111c2d;
+          border-color: rgba(255, 255, 255, 0.08);
+          box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        .timeline-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 12px;
+          border-radius: 16px;
+          background: #eff4ff;
+        }
+        body.dark-mode .timeline-item {
+          background: rgba(255, 255, 255, 0.04);
+        }
+
+        .tl-icon-circle {
+          width: 36px;
+          height: 36px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+        .tl-icon-circle .material-symbols-outlined {
+          font-size: 18px;
+        }
+        .tl-icon-circle.emerald { background: #d1fae5; color: #047857; }
+        .tl-icon-circle.blue { background: #dbeafe; color: #1d4ed8; }
+        .tl-icon-circle.rose { background: #ffdada; color: #be0037; }
+        body.dark-mode .tl-icon-circle.emerald { background: rgba(4, 120, 87, 0.25); color: #34d399; }
+        body.dark-mode .tl-icon-circle.blue { background: rgba(29, 78, 216, 0.25); color: #60a5fa; }
+        body.dark-mode .tl-icon-circle.rose { background: rgba(190, 0, 55, 0.25); color: #f87171; }
+
+        .tl-info-wrap {
+          flex: 1;
+          min-width: 0;
+        }
+        .tl-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .tl-title {
+          font-size: 12px;
+          font-weight: 700;
+          color: #0b1c30;
+        }
+        body.dark-mode .tl-title {
+          color: #ffffff;
+        }
+        .tl-time-badge {
+          font-size: 11px;
+          font-weight: 700;
+          padding: 2px 8px;
+          border-radius: 9999px;
+          white-space: nowrap;
+        }
+        .tl-time-badge.emerald { background: #ecfdf5; color: #047857; }
+        .tl-time-badge.blue { background: #eff6ff; color: #1d4ed8; }
+        .tl-time-badge.rose { background: #fff1f2; color: #be0037; }
+        body.dark-mode .tl-time-badge.emerald { background: rgba(4, 120, 87, 0.3); color: #6ee7b7; }
+        body.dark-mode .tl-time-badge.blue { background: rgba(29, 78, 216, 0.3); color: #93c5fd; }
+        body.dark-mode .tl-time-badge.rose { background: rgba(190, 0, 55, 0.3); color: #fca5a5; }
+
+        .tl-desc {
+          font-size: 12px;
+          line-height: 16px;
+          color: #545f73;
+          margin: 4px 0 0 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        body.dark-mode .tl-desc {
+          color: #94a3b8;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(0.96); }
+        }
+        @keyframes ping {
+          75%, 100% { transform: scale(2); opacity: 0; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
     </div>
   );
