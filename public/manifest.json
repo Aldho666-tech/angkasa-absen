@@ -1,0 +1,18 @@
+{
+  "name": "Angkasa Absen — Presensi Digital Karyawan",
+  "short_name": "Angkasa Absen",
+  "description": "Sistem Presensi Digital dan Monitoring Operasional Karyawan PT Angkasa Ekspres Indonesia",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#e60000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/css/asset/LOGO.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

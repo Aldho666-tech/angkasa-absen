@@ -13,23 +13,19 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Serve static files from the project root
+// Serve static files from dist (production build) if exists, and project root
+const distPath = path.join(__dirname, 'dist');
+if (fs.existsSync(distPath)) {
+    app.use(express.static(distPath));
+}
 app.use(express.static(__dirname));
 
-// Routes for main pages
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.get('/dashboard', (req, res) => {
+// Legacy HTML routes for backward compatibility
+app.get('/legacy-dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
 
-app.get('/admin', (req, res) => {
+app.get('/legacy-admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
@@ -298,6 +294,38 @@ app.post('/api/clockout', async (req, res) => {
     }
 });
 
+// === 3.5 API PENGAJUAN IZIN / CUTI / SAKIT ===
+app.post('/api/izin', async (req, res) => {
+    const { userId, tanggal, tipe, keterangan } = req.body;
+    if (!userId || !tipe || !keterangan) {
+        return res.status(400).json({ error: 'Data pengajuan izin tidak lengkap' });
+    }
+
+    try {
+        const targetDate = tanggal || getLocalDateString();
+        const status = ['Izin', 'Sakit', 'Cuti'].includes(tipe) ? tipe : 'Izin';
+        const info = `[${status}] ${keterangan}`;
+
+        const existing = await dbQuery('SELECT id FROM attendance WHERE user_id = ? AND tanggal = ?', [userId, targetDate]);
+        if (existing.length > 0) {
+            await dbQuery(
+                'UPDATE attendance SET status = ?, lokasi_masuk = ? WHERE user_id = ? AND tanggal = ?',
+                [status, info, userId, targetDate]
+            );
+        } else {
+            await dbQuery(
+                'INSERT INTO attendance (user_id, tanggal, status, waktu_masuk, lokasi_masuk) VALUES (?, ?, ?, ?, ?)',
+                [userId, targetDate, status, '08:00:00', info]
+            );
+        }
+
+        res.status(200).json({ message: `Pengajuan ${status} berhasil dicatat!` });
+    } catch (error) {
+        console.error('Izin error:', error);
+        res.status(500).json({ error: 'Database error: ' + error.message });
+    }
+});
+
 // === 4. API STATUS ABSENSI HARI INI ===
 app.get('/api/attendance/today/:userId', async (req, res) => {
     const { userId } = req.params;
@@ -535,11 +563,21 @@ app.get('/api/dashboard/summaryToday', async (req, res) => {
             WHERE tanggal = ? AND status = 'Telat'
         `, [today]);
 
+        const izinRows = await dbQuery(`
+            SELECT COUNT(id) as count FROM attendance
+            WHERE tanggal = ? AND (status = 'Izin' OR status = 'Sakit')
+        `, [today]);
+
+        const cutiRows = await dbQuery(`
+            SELECT COUNT(id) as count FROM attendance
+            WHERE tanggal = ? AND status = 'Cuti'
+        `, [today]);
+
         res.json({
             hadir: hadirRows[0] ? hadirRows[0].count : 0,
             telat: telatRows[0] ? telatRows[0].count : 0,
-            cuti: 0,
-            izin: 0
+            cuti: cutiRows[0] ? cutiRows[0].count : 0,
+            izin: izinRows[0] ? izinRows[0].count : 0
         });
     } catch (error) {
         console.error('Error fetching dashboard summary:', error);
@@ -618,6 +656,18 @@ app.get('/api/rekap/download', async (req, res) => {
         console.error('Download rekap error:', error);
         res.status(500).send('Gagal membuat file rekap: ' + error.message);
     }
+});
+
+// SPA Fallback: redirect all unmatched non-API routes to index.html (Express 5 compatible)
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'Endpoint API tidak ditemukan' });
+    }
+    const distIndex = path.join(__dirname, 'dist', 'index.html');
+    if (fs.existsSync(distIndex)) {
+        return res.sendFile(distIndex);
+    }
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Jalankan Server
