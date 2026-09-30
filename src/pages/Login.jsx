@@ -83,10 +83,10 @@ export default function Login() {
 
           <div className="visual-brand-top">
             <img
-              src="/css/asset/LOGO.png"
+              src="/LOGO.png"
               alt="PT Angkasa Ekspres"
               className="visual-brand-logo"
-              onError={(e) => { e.target.style.display = 'none'; }}
+              onError={(e) => { e.target.src = '/LOGO.png'; }}
             />
             <div className="visual-badge">
               <i className="fas fa-shield-halved"></i> Presensi Cepat &amp; Akurat
@@ -100,10 +100,10 @@ export default function Login() {
 
           <div className="visual-truck-container">
             <img
-              src="/css/asset/gif3.gif"
+              src="/gif3.gif"
               alt="Animasi Armada &amp; Operasional Angkasa"
               className="visual-truck-img"
-              onError={(e) => { e.target.src = '/css/asset/truck.png'; }}
+              onError={(e) => { e.target.src = '/truck.png'; }}
             />
           </div>
 
@@ -137,7 +137,7 @@ export default function Login() {
         {/* Right Form Panel */}
         <div className="login-form-panel">
           <div className="form-brand-header">
-            <img src="/css/asset/LOGO.png" alt="Logo Angkasa" className="form-brand-logo" onError={(e) => { e.target.style.display = 'none'; }} />
+            <img src="/LOGO.png" alt="Logo Angkasa" className="form-brand-logo" onError={(e) => { e.target.style.display = 'none'; }} />
             <h1 className="form-brand-title">PT Angkasa Ekspres</h1>
             <p className="form-brand-desc">Masuk ke akun presensi &amp; operasional Anda</p>
           </div>
@@ -216,7 +216,7 @@ export default function Login() {
         {/* Upper Hero Area with GIF Background */}
         <div className="mob-hero">
           <img
-            src="/css/asset/gif3.gif"
+            src="/gif3.gif"
             alt="Armada Background"
             className="mob-hero-bg-anim"
             onError={(e) => { e.target.style.display = 'none'; }}
@@ -228,7 +228,7 @@ export default function Login() {
           {/* Brand Logo at Top */}
           <div className="mob-hero-brand-wrap">
             <img
-              src="/css/asset/LOGO.png"
+              src="/LOGO.png"
               alt="Angkasa Ekspres"
               className="mob-hero-logo"
               onError={(e) => { e.target.style.display = 'none'; }}

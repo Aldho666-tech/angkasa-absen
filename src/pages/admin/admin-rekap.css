@@ -1,0 +1,645 @@
+/* ==========================================================================
+   Admin Rekap Absensi Styles
+   Matches Reference: rekap.html
+   ========================================================================== */
+
+.adm-rek-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* ── 1. Page Header ── */
+.adm-rek-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+}
+
+.adm-rek-header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-rek-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0b1c30;
+  letter-spacing: -0.015em;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.dark .adm-rek-title {
+  color: #f8f9ff;
+}
+
+.adm-rek-subtitle {
+  font-size: 13px;
+  color: #545f73;
+  margin-top: 4px;
+}
+
+.dark .adm-rek-subtitle {
+  color: #94a3b8;
+}
+
+.adm-rek-header-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: #eff4ff;
+  color: #b80035;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+}
+
+.dark .adm-rek-header-icon {
+  background: #1a273b;
+  color: #ffb3b6;
+}
+
+/* ── 2. Filter & Export Controls Card ── */
+.adm-rek-ctrl-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+  border: 1px solid #e5eeff;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dark .adm-rek-ctrl-card {
+  background: #141f30;
+  border-color: #24344d;
+}
+
+.adm-rek-period-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.adm-rek-period-lbl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #545f73;
+}
+
+.dark .adm-rek-period-lbl {
+  color: #94a3b8;
+}
+
+.adm-rek-period-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff4ff;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  border: 1px solid #e5eeff;
+  position: relative;
+}
+
+.dark .adm-rek-period-select-wrap {
+  background: #1a273b;
+  border-color: #24344d;
+}
+
+.adm-rek-period-input {
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0b1c30;
+  outline: none;
+  cursor: pointer;
+}
+
+.dark .adm-rek-period-input {
+  color: #f8f9ff;
+}
+
+.adm-rek-export-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.adm-rek-btn-excel {
+  height: 46px;
+  border-radius: 9999px;
+  background: #e11d48;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 8px 20px rgba(225, 29, 72, 0.22);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.adm-rek-btn-excel:hover {
+  background: #b80035;
+}
+
+.adm-rek-btn-excel:active {
+  transform: scale(0.97);
+}
+
+.adm-rek-btn-pdf {
+  height: 46px;
+  border-radius: 9999px;
+  background: #eff4ff;
+  color: #b80035;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid #ffdada;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.dark .adm-rek-btn-pdf {
+  background: #1a273b;
+  border-color: #24344d;
+  color: #ffb3b6;
+}
+
+.adm-rek-btn-pdf:hover {
+  background: #ffdada;
+}
+
+.adm-rek-btn-pdf:active {
+  transform: scale(0.97);
+}
+
+/* ── 3. Main Data Container ── */
+.adm-rek-data-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+  border: 1px solid #e5eeff;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dark .adm-rek-data-card {
+  background: #141f30;
+  border-color: #24344d;
+}
+
+/* Segmented Control Tabs */
+.adm-rek-tabs-bar {
+  padding: 4px;
+  border-radius: 9999px;
+  background: #eff4ff;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #e5eeff;
+}
+
+.dark .adm-rek-tabs-bar {
+  background: #1a273b;
+  border-color: #24344d;
+}
+
+.adm-rek-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: #545f73;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.dark .adm-rek-tab {
+  color: #94a3b8;
+}
+
+.adm-rek-tab.active {
+  background: #ffffff;
+  color: #b80035;
+  box-shadow: 0 2px 8px rgba(11, 28, 48, 0.06);
+  font-weight: 700;
+}
+
+.dark .adm-rek-tab.active {
+  background: #141f30;
+  color: #ffb3b6;
+}
+
+/* Search bar */
+.adm-rek-search-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.adm-rek-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #545f73;
+  font-size: 20px;
+  pointer-events: none;
+}
+
+.adm-rek-search-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 16px 0 44px;
+  background: #eff4ff;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0b1c30;
+  border: 1px solid #e5eeff;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.dark .adm-rek-search-input {
+  background: #1a273b;
+  color: #f8f9ff;
+  border-color: #24344d;
+}
+
+.adm-rek-search-input:focus {
+  background: #ffffff;
+  border-color: #e11d48;
+}
+
+.dark .adm-rek-search-input:focus {
+  background: #1e2d44;
+}
+
+/* Table Card */
+.adm-rek-table-wrap {
+  overflow-x: auto;
+  margin: 0 -18px;
+  padding: 0 18px 4px 18px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.adm-rek-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 320px;
+}
+
+.adm-rek-thead-tr {
+  background: rgba(239, 244, 255, 0.7);
+  border-radius: 12px;
+}
+
+.dark .adm-rek-thead-tr {
+  background: rgba(26, 39, 59, 0.7);
+}
+
+.adm-rek-th {
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #545f73;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dark .adm-rek-th {
+  color: #94a3b8;
+}
+
+.adm-rek-tbody-tr {
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid rgba(229, 238, 255, 0.4);
+}
+
+.dark .adm-rek-tbody-tr {
+  border-bottom-color: rgba(36, 52, 77, 0.4);
+}
+
+.adm-rek-tbody-tr:hover {
+  background-color: rgba(239, 244, 255, 0.4);
+}
+
+.dark .adm-rek-tbody-tr:hover {
+  background-color: rgba(26, 39, 59, 0.4);
+}
+
+.adm-rek-td {
+  padding: 12px;
+  font-size: 13px;
+  color: #0b1c30;
+  vertical-align: middle;
+}
+
+.dark .adm-rek-td {
+  color: #f8f9ff;
+}
+
+.adm-rek-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-rek-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.adm-rek-user-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0b1c30;
+  text-transform: capitalize;
+  line-height: 1.2;
+}
+
+.dark .adm-rek-user-name {
+  color: #f8f9ff;
+}
+
+.adm-rek-user-sub {
+  font-size: 11px;
+  color: #545f73;
+}
+
+.dark .adm-rek-user-sub {
+  color: #94a3b8;
+}
+
+.adm-rek-count-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ── 4. Summary Statistics Bento Section ── */
+.adm-rek-stats-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adm-rek-stats-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.adm-rek-stats-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0b1c30;
+  margin: 0;
+}
+
+.dark .adm-rek-stats-title {
+  color: #f8f9ff;
+}
+
+.adm-rek-stats-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: #b80035;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.adm-rek-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.adm-rek-hero-metric {
+  grid-column: span 2;
+  background: linear-gradient(135deg, #e11d48 0%, #b80035 100%);
+  border-radius: 20px;
+  padding: 18px 20px;
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(225, 29, 72, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.adm-rek-hero-content {
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+}
+
+.adm-rek-hero-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffdada;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.adm-rek-hero-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.adm-rek-hero-num {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.adm-rek-hero-meta {
+  font-size: 12px;
+  color: #ffdada;
+  font-weight: 600;
+}
+
+.adm-rek-hero-sub {
+  font-size: 12px;
+  color: rgba(255, 218, 218, 0.9);
+  margin-top: 4px;
+}
+
+.adm-rek-hero-icon-box {
+  width: 58px;
+  height: 58px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.adm-rek-hero-faint {
+  position: absolute;
+  right: -20px;
+  bottom: -20px;
+  width: 110px;
+  height: 110px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.adm-rek-sub-metric {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+  border: 1px solid #e5eeff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.dark .adm-rek-sub-metric {
+  background: #141f30;
+  border-color: #24344d;
+}
+
+.adm-rek-sub-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.adm-rek-sub-label {
+  font-size: 11px;
+  color: #545f73;
+}
+
+.dark .adm-rek-sub-label {
+  color: #94a3b8;
+}
+
+.adm-rek-sub-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0b1c30;
+  margin-top: 2px;
+}
+
+.dark .adm-rek-sub-val {
+  color: #f8f9ff;
+}
+
+/* ── 5. Operational Notes Banner ── */
+.adm-rek-notice-banner {
+  background: #eff4ff;
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #e5eeff;
+}
+
+.dark .adm-rek-notice-banner {
+  background: #141f30;
+  border-color: #24344d;
+}
+
+.adm-rek-notice-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #b80035;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+}
+
+.dark .adm-rek-notice-icon {
+  background: #1a273b;
+  color: #ffb3b6;
+}
+
+.adm-rek-notice-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.adm-rek-notice-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0b1c30;
+}
+
+.dark .adm-rek-notice-title {
+  color: #f8f9ff;
+}
+
+.adm-rek-notice-desc {
+  font-size: 11px;
+  color: #545f73;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .adm-rek-notice-desc {
+  color: #94a3b8;
+}

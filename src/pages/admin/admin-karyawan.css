@@ -1,0 +1,893 @@
+/* ==========================================================================
+   Admin Karyawan Styles
+   Matches Reference: karyawan.html
+   ========================================================================== */
+
+.adm-kar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* ── 1. Overview & Header ── */
+.adm-kar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.adm-kar-header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-kar-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #b80035;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.adm-kar-tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background-color: #e11d48;
+  animation: adm-pulse 1.8s infinite;
+}
+
+@keyframes adm-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.adm-kar-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0b1c30;
+  letter-spacing: -0.015em;
+  margin: 4px 0 0 0;
+  line-height: 1.25;
+}
+
+.dark .adm-kar-title {
+  color: #f8f9ff;
+}
+
+.adm-kar-subtitle {
+  font-size: 13px;
+  color: #545f73;
+  margin-top: 4px;
+}
+
+.dark .adm-kar-subtitle {
+  color: #94a3b8;
+}
+
+.adm-kar-header-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(11, 28, 48, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b80035;
+  flex-shrink: 0;
+  border: 1px solid #e5eeff;
+}
+
+.dark .adm-kar-header-icon-box {
+  background: #141f30;
+  border-color: #24344d;
+  color: #ffb3b6;
+}
+
+/* ── 2. Quick Stats Bento Strip (3 cards) ── */
+.adm-kar-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.adm-kar-stat-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+  border: 1px solid #e5eeff;
+  min-width: 0;
+}
+
+.dark .adm-kar-stat-card {
+  background: #141f30;
+  border-color: #24344d;
+}
+
+.adm-kar-stat-label {
+  font-size: 11px;
+  color: #545f73;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .adm-kar-stat-label {
+  color: #94a3b8;
+}
+
+.adm-kar-stat-num {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0b1c30;
+  margin-top: 6px;
+  line-height: 1;
+}
+
+.dark .adm-kar-stat-num {
+  color: #f8f9ff;
+}
+
+.adm-kar-stat-meta {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* ── 3. Primary CTA Button ── */
+.adm-kar-btn-primary {
+  width: 100%;
+  height: 52px;
+  background: #e11d48;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 9999px;
+  border: none;
+  box-shadow: 0 10px 24px rgba(225, 29, 72, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+}
+
+.adm-kar-btn-primary:hover {
+  background: #b80035;
+  box-shadow: 0 12px 28px rgba(225, 29, 72, 0.35);
+}
+
+.adm-kar-btn-primary:active {
+  transform: scale(0.99);
+}
+
+/* ── 4. Search & Filter Section ── */
+.adm-kar-filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.adm-kar-search-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.adm-kar-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #545f73;
+  font-size: 20px;
+  pointer-events: none;
+}
+
+.adm-kar-search-input {
+  width: 100%;
+  height: 50px;
+  padding: 0 16px 0 46px;
+  background: #ffffff;
+  border-radius: 18px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0b1c30;
+  border: 1px solid #e5eeff;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.dark .adm-kar-search-input {
+  background: #141f30;
+  color: #f8f9ff;
+  border-color: #24344d;
+}
+
+.adm-kar-search-input:focus {
+  border-color: rgba(225, 29, 72, 0.4);
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12);
+}
+
+.adm-kar-chips-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.adm-kar-chips-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.adm-kar-chip {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid #e5eeff;
+  background: #ffffff;
+  color: #545f73;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.03);
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.dark .adm-kar-chip {
+  background: #141f30;
+  border-color: #24344d;
+  color: #94a3b8;
+}
+
+.adm-kar-chip:hover {
+  color: #0b1c30;
+  background: #eff4ff;
+}
+
+.dark .adm-kar-chip:hover {
+  color: #ffffff;
+  background: #1e2c42;
+}
+
+.adm-kar-chip.active {
+  background: #e11d48;
+  color: #ffffff;
+  border-color: #e11d48;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.25);
+}
+
+.dark .adm-kar-chip.active {
+  background: #e11d48;
+  color: #ffffff;
+}
+
+/* ── 5. Roster Card & Table Section ── */
+.adm-kar-roster-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+  border: 1px solid #e5eeff;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dark .adm-kar-roster-card {
+  background: #141f30;
+  border-color: #24344d;
+}
+
+.adm-kar-roster-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.adm-kar-roster-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-kar-roster-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  background: #ffdada;
+  color: #b80035;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-kar-roster-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-kar-roster-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0b1c30;
+  margin: 0;
+}
+
+.dark .adm-kar-roster-title {
+  color: #f8f9ff;
+}
+
+.adm-kar-roster-sub {
+  font-size: 11px;
+  color: #545f73;
+}
+
+.dark .adm-kar-roster-sub {
+  color: #94a3b8;
+}
+
+.adm-kar-roster-badge {
+  padding: 4px 12px;
+  background: #eff4ff;
+  color: #b80035;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 9999px;
+}
+
+.dark .adm-kar-roster-badge {
+  background: #1e2c42;
+  color: #ffb3b6;
+}
+
+/* Staff Table Header */
+.adm-kar-table-header {
+  display: grid;
+  grid-template-columns: 28px 1fr 68px 36px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  background: rgba(239, 244, 255, 0.7);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #545f73;
+}
+
+.dark .adm-kar-table-header {
+  background: rgba(26, 39, 59, 0.7);
+  color: #94a3b8;
+}
+
+/* Staff Row */
+.adm-kar-rows-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adm-kar-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 68px 36px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 16px;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.adm-kar-row:hover {
+  background-color: rgba(239, 244, 255, 0.5);
+}
+
+.dark .adm-kar-row:hover {
+  background-color: rgba(26, 39, 59, 0.5);
+}
+
+.adm-kar-col-no {
+  font-size: 12px;
+  font-weight: 600;
+  color: #545f73;
+  text-align: center;
+}
+
+.adm-kar-col-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.adm-kar-row-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.adm-kar-row-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.adm-kar-row-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0b1c30;
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .adm-kar-row-name {
+  color: #f8f9ff;
+}
+
+.adm-kar-row-email {
+  font-size: 11px;
+  color: #545f73;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .adm-kar-row-email {
+  color: #94a3b8;
+}
+
+.adm-kar-col-status {
+  display: flex;
+  justify-content: center;
+}
+
+.adm-kar-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  background: #eff4ff;
+  color: #b80035;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dark .adm-kar-status-pill {
+  background: #1e2c42;
+  color: #ffb3b6;
+}
+
+.adm-kar-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #e11d48;
+}
+
+.adm-kar-col-action {
+  display: flex;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.adm-kar-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: #eff4ff;
+  color: #545f73;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dark .adm-kar-action-btn {
+  background: #1e2c42;
+  color: #a0aec0;
+}
+
+.adm-kar-action-btn:hover {
+  background: #ffdada;
+  color: #b80035;
+}
+
+/* Row Action Dropdown Menu */
+.adm-kar-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: 36px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(11, 28, 48, 0.14);
+  border: 1px solid #e5eeff;
+  z-index: 40;
+  min-width: 140px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dark .adm-kar-menu-dropdown {
+  background: #162235;
+  border-color: #24344d;
+}
+
+.adm-kar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: #0b1c30;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+  font-family: inherit;
+  width: 100%;
+}
+
+.dark .adm-kar-menu-item {
+  color: #f8f9ff;
+}
+
+.adm-kar-menu-item:hover {
+  background: #eff4ff;
+}
+
+.dark .adm-kar-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.adm-kar-menu-item-del {
+  color: #e11d48;
+}
+
+.adm-kar-menu-item-del:hover {
+  background: #ffe4e6;
+  color: #b80035;
+}
+
+/* ── Pagination Footer ── */
+.adm-kar-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+}
+
+.adm-kar-page-info {
+  font-size: 12px;
+  color: #545f73;
+}
+
+.dark .adm-kar-page-info {
+  color: #94a3b8;
+}
+
+.adm-kar-page-ctrls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.adm-kar-page-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: #eff4ff;
+  color: #545f73;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.dark .adm-kar-page-btn {
+  background: #1e2c42;
+  color: #94a3b8;
+}
+
+.adm-kar-page-btn.active {
+  background: #e11d48;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.25);
+}
+
+.adm-kar-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Operational Notice Card ── */
+.adm-kar-notice-card {
+  background: rgba(239, 244, 255, 0.6);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #e5eeff;
+}
+
+.dark .adm-kar-notice-card {
+  background: #141f30;
+  border-color: #24344d;
+}
+
+.adm-kar-notice-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.adm-kar-notice-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b80035;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+}
+
+.dark .adm-kar-notice-icon {
+  background: #1a273b;
+  color: #ffb3b6;
+}
+
+.adm-kar-notice-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.adm-kar-notice-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0b1c30;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .adm-kar-notice-title {
+  color: #f8f9ff;
+}
+
+.adm-kar-notice-desc {
+  font-size: 12px;
+  color: #545f73;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .adm-kar-notice-desc {
+  color: #94a3b8;
+}
+
+/* ── Modal Styles ── */
+.adm-kar-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(11, 28, 48, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.adm-kar-modal-box {
+  background: #ffffff;
+  border-radius: 28px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(11, 28, 48, 0.25);
+  border: 1px solid #e5eeff;
+  display: flex;
+  flex-direction: column;
+}
+
+.dark .adm-kar-modal-box {
+  background: #141f30;
+  border-color: #24344d;
+}
+
+.adm-kar-modal-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5eeff;
+}
+
+.dark .adm-kar-modal-header {
+  border-bottom-color: #24344d;
+}
+
+.adm-kar-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adm-kar-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0b1c30;
+  margin: 0;
+}
+
+.dark .adm-kar-modal-title {
+  color: #f8f9ff;
+}
+
+.adm-kar-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: #eff4ff;
+  color: #545f73;
+  border: none;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.dark .adm-kar-modal-close {
+  background: #1e2c42;
+  color: #94a3b8;
+}
+
+.adm-kar-modal-form {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.adm-kar-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.adm-kar-input-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #545f73;
+}
+
+.dark .adm-kar-input-label {
+  color: #94a3b8;
+}
+
+.adm-kar-modal-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  background: #eff4ff;
+  border-radius: 14px;
+  border: 1px solid #e5eeff;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0b1c30;
+  box-sizing: border-box;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.dark .adm-kar-modal-input {
+  background: #1a273b;
+  border-color: #24344d;
+  color: #f8f9ff;
+}
+
+.adm-kar-modal-input:focus {
+  border-color: #e11d48;
+  background: #ffffff;
+}
+
+.dark .adm-kar-modal-input:focus {
+  background: #1e2d44;
+}
+
+.adm-kar-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e5eeff;
+}
+
+.dark .adm-kar-modal-footer {
+  border-top-color: #24344d;
+}
+
+.adm-kar-btn-cancel {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: #545f73;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.adm-kar-btn-submit {
+  padding: 10px 20px;
+  border-radius: 9999px;
+  border: none;
+  background: #e11d48;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.25);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.adm-kar-btn-submit:hover {
+  background: #b80035;
+}

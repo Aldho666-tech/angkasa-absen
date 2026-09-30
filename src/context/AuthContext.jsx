@@ -24,8 +24,10 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (darkMode) {
       document.body.classList.add('dark-mode');
+      document.documentElement.classList.add('dark');
     } else {
       document.body.classList.remove('dark-mode');
+      document.documentElement.classList.remove('dark');
     }
     localStorage.setItem('darkMode', darkMode ? 'true' : 'false');
   }, [darkMode]);
@@ -71,6 +73,7 @@ export function AuthProvider({ children }) {
         login,
         logout,
         updateLocalUser,
+        updateUser: updateLocalUser,
         isAuthenticated: !!user,
         isAdmin: role === 'admin'
       }}

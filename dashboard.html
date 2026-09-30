@@ -1,156 +1,732 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <!-- Tautan ke file CSS eksternal -->
-    <link rel="stylesheet" href="css/dashboard.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Angkasa Absen — Dashboard Karyawan</title>
+  <meta name="description"
+    content="Dashboard kehadiran karyawan Angkasa Absen — kelola absensi, rekap, dan profil Anda.">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
 </head>
+
 <body>
 
-    <div class="dashboard-container">
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="profile-picture">
-                    <img src="Admin-Avatar.png" alt="Profile Sidebar"> 
-                </div>
-                <div class="welcome-text">
-                    <h2 id="sidebar-user-name">Nama Pengguna</h2>
-                    <p>Semangat Kerjanya!</p>
-                </div>
-            </div>
+  <!-- Mobile overlay -->
+  <div class="mobile-overlay" id="mobileOverlay"></div>
 
-            <ul class="menu">
-                <li data-tab="profile">
-                    <i class="fas fa-user"></i> <span>Profile</span>
-                </li>
-                <li data-tab="password">
-                    <i class="fas fa-lock"></i> <span>Ubah Password</span>
-                </li>
-                <li data-tab="kehadiran" class="active-menu">
-                    <i class="fas fa-calendar-check"></i> <span>Kehadiran</span>
-                </li>
-                <li data-tab="rekapAbsensi">
-                    <i class="fas fa-clipboard-list"></i> <span>Rekap Absensi</span>
-                </li>
-            </ul>
+  <div class="dashboard-container">
 
-            <button class="logout-btn" id="logout-btn">
-                <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
-            </button>
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <!-- Brand -->
+        <div class="sidebar-brand">
+          <div class="brand-icon"><i class="fas fa-plane-departure"></i></div>
+          <span class="brand-name">Angkasa Absen</span>
         </div>
-
-        <div class="main-content">
-            <div class="topbar">
-                <button id="toggleSidebar" aria-label="Toggle Sidebar"><i class="fas fa-bars"></i></button>
-            </div>
-
-            <div id="profile" class="tab-content">
-                <h1>Profil Saya</h1>
-                <div class="profile-layout">
-                    <div class="profile-left-column">
-                        <div class="card">
-                            <div class="profile-main-image-container">
-                                <img src="Admin-Avatar.png" alt="Foto Profil Utama" id="mainProfilePic"> 
-                                <input type="file" id="uploadProfilePic" style="display: none;" accept="image/*">
-                            </div>
-                            <div class="profile-photo-actions">
-                               <button class="btn btn-red-outline" id="changePhotoBtn" style="width:100%"><i class="fas fa-camera"></i> Ganti Foto</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="profile-right-column">
-                        <form id="profileForm" class="card">
-                            <h3>Informasi Akun</h3>
-                            <div class="info-group">
-                                <label for="profileNama">Nama Lengkap</label>
-                                <input type="text" id="profileNama" readonly>
-                            </div>
-                            <div class="info-group">
-                                <label for="profileEmail">Email</label>
-                                <input type="email" id="profileEmail" readonly>
-                            </div>
-                            <div class="info-group">
-                                <label for="profileTelepon">No. Telepon</label>
-                                <input type="tel" id="profileTelepon" readonly>
-                            </div>
-                            <div class="profile-form-actions">
-                                <button type="button" class="btn btn-grey" id="cancelProfileBtn" style="display: none;">Batal</button>
-                                <button type="submit" id="saveProfileBtn" class="btn btn-red" style="display: none;"><i class="fas fa-save"></i> Simpan</button>
-                                <button type="button" class="btn btn-red" id="editProfileBtn"><i class="fas fa-edit"></i> Edit Profile</button>
-                            </div>
-                        </form> 
-                    </div>
-                </div>
-            </div>
-
-            <div id="password" class="tab-content">
-                 <div class="card" style="max-width: 500px; margin: auto;">
-                    <h3>Ubah Password</h3>
-                    <form class="password-form" onsubmit="return false;">
-                        <div class="info-group">
-                            <label for="oldPassword">Password Lama</label>
-                            <input type="password" id="oldPassword" required>
-                        </div>
-                         <div class="info-group">
-                            <label for="newPassword">Password Baru</label>
-                            <input type="password" id="newPassword" required>
-                        </div>
-                         <div class="info-group">
-                            <label for="confirmNewPassword">Konfirmasi Password Baru</label>
-                            <input type="password" id="confirmNewPassword" required>
-                        </div>
-                        <button type="submit" class="btn btn-red" style="width:100%;">Simpan Password</button>
-                    </form>
-                </div>
-            </div>
-
-            <div id="kehadiran" class="tab-content active">
-                 <div class="card">
-                     <div class="kehadiran">
-                        <div class="camera-container">
-                            <video id="video" playsinline muted class="camera-off"></video>
-                             <div class="camera-controls" style="margin-top: 15px;">
-                                <button id="toggleCameraButton" class="btn btn-grey">
-                                  <i class="fas fa-video"></i> <span>Nyalakan Kamera</span>
-                                </button>
-                            </div>
-                        </div>
-                         <div id="realtime-location" style="margin: 20px 0;">Deteksi lokasi...</div>
-                         <div class="absen-buttons">
-                             <button id="clockInButton" class="btn btn-red"><i class="fas fa-sign-in-alt"></i> Masuk</button>
-                             <button id="clockOutButton" class="btn btn-red-outline"><i class="fas fa-sign-out-alt"></i> Pulang</button>
-                         </div>
-                         <canvas id="snapshot" style="display:none;"></canvas>
-                         <div class="riwayat-container">
-                             <h3 style="text-align:center; border:none; margin-top:30px;">Riwayat Kehadiran Hari Ini</h3>
-                             <div id="riwayatContainer" class="riwayat-list"></div>
-                         </div>
-                     </div>
-                 </div>
-            </div>
-
-            <div id="rekapAbsensi" class="tab-content">
-                <h1>Rekapitulasi Absensi</h1>
-                <div class="card">
-                     <div class="rekap-filter">
-                         <label for="bulanRekap">Pilih Bulan:</label>
-                         <input type="month" id="bulanRekap" name="bulanRekap">
-                         <button class="btn btn-red-outline" id="tampilkanRekapBtn">Tampilkan</button>
-                     </div>
-                </div>
-                <div class="card rekap-detail-list">
-                     <h2>Detail Kehadiran</h2>
-                     <ul id="detailRekapList"></ul>
-                </div>
-            </div>
-
+        <!-- Profile -->
+        <div class="profile-picture">
+          <img src="Admin-Avatar.png" alt="Foto Profil" id="sidebar-profile-img">
         </div>
+        <div class="welcome-text">
+          <h2 id="sidebar-user-name">Nama Pengguna</h2>
+          <p>Semangat Kerjanya! ✨</p>
+        </div>
+      </div>
+
+      <ul class="menu" role="navigation" aria-label="Menu Utama">
+        <li data-tab="kehadiran" class="active-menu" id="menu-kehadiran">
+          <i class="fas fa-calendar-check"></i>
+          <span>Kehadiran</span>
+        </li>
+        <li data-tab="rekapAbsensi" id="menu-rekapAbsensi">
+          <i class="fas fa-clipboard-list"></i>
+          <span>Rekap Absensi</span>
+        </li>
+        <li data-tab="pengajuanIzin" id="menu-pengajuanIzin">
+          <i class="fas fa-file-medical"></i>
+          <span>Pengajuan Izin</span>
+        </li>
+        <li data-tab="profile" id="menu-profile">
+          <i class="fas fa-user-circle"></i>
+          <span>Profil Saya</span>
+        </li>
+        <li data-tab="password" id="menu-password">
+          <i class="fas fa-lock"></i>
+          <span>Ubah Password</span>
+        </li>
+      </ul>
+
+      <button class="logout-btn" id="logout-btn" aria-label="Logout">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Keluar</span>
+      </button>
+    </aside>
+
+    <!-- ===================== MAIN ===================== -->
+    <div class="main-content">
+
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="toggleSidebar" aria-label="Toggle Sidebar">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div>
+            <div class="topbar-title" id="topbar-page-title">Kehadiran</div>
+            <div class="topbar-subtitle" id="topbar-date-label">Memuat tanggal...</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-clock">
+            <i class="fas fa-clock" style="color:var(--brand);font-size:13px"></i>
+            <span class="time" id="topbar-live-clock">00:00:00</span>
+            <span class="date-label" id="topbar-day-label">–</span>
+          </div>
+          <button id="toggleDarkMode" aria-label="Toggle Dark Mode" title="Dark Mode">
+            <i class="fas fa-moon"></i>
+          </button>
+          <div class="topbar-user" id="topbar-user-widget">
+            <img src="Admin-Avatar.png" alt="User" id="topbar-user-img">
+            <div class="topbar-user-info">
+              <div class="user-name" id="topbar-user-name">Pengguna</div>
+              <div class="user-role" id="topbar-user-role">Karyawan</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ===================== CONTENT AREA ===================== -->
+      <main class="content-area">
+
+        <!-- ========== TAB: KEHADIRAN ========== -->
+        <section id="kehadiran" class="tab-content active" aria-label="Tab Kehadiran">
+
+          <!-- DESKTOP DASHBOARD VIEW -->
+          <div class="desktop-dashboard-view">
+            <!-- Modern Welcome Hero Banner -->
+            <div class="welcome-banner">
+              <div class="welcome-banner-bg-orb orb-1"></div>
+              <div class="welcome-banner-bg-orb orb-2"></div>
+              <div class="welcome-text-main">
+                <div class="welcome-tag"><i class="fas fa-sparkles"></i> Portal Presensi Karyawan</div>
+                <h1>Selamat Datang, <span id="banner-name">Karyawan</span>! 👋</h1>
+                <p><i class="fas fa-calendar-day"></i> <span id="banner-date">Memuat tanggal...</span> • PT Angkasa
+                  Ekspres Indonesia</p>
+              </div>
+              <div class="welcome-banner-meta">
+                <div class="banner-stat-glass">
+                  <div class="stat-num" id="banner-hadir-count">–</div>
+                  <div class="stat-label"><i class="fas fa-check-circle"></i> Hadir</div>
+                </div>
+                <div class="banner-stat-glass">
+                  <div class="stat-num" id="banner-telat-count">–</div>
+                  <div class="stat-label"><i class="fas fa-clock"></i> Telat</div>
+                </div>
+                <div class="banner-stat-glass">
+                  <div class="stat-num" id="banner-alpha-count">–</div>
+                  <div class="stat-label"><i class="fas fa-times-circle"></i> Alpha</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 1: Balanced 4-Card Metrics Strip -->
+            <div class="cards-row cards-row-4">
+              <!-- Jam Masuk Card -->
+              <div class="card stat-card">
+                <div class="stat-card-header">
+                  <div class="stat-icon green"><i class="fas fa-sign-in-alt"></i></div>
+                  <span class="stat-pill green"><i class="fas fa-arrow-down"></i> Masuk</span>
+                </div>
+                <div class="stat-value" id="stat-jam-masuk">–</div>
+                <div class="stat-desc">Jam Masuk Hari Ini</div>
+              </div>
+
+              <!-- Jam Pulang Card -->
+              <div class="card stat-card">
+                <div class="stat-card-header">
+                  <div class="stat-icon red"><i class="fas fa-sign-out-alt"></i></div>
+                  <span class="stat-pill red"><i class="fas fa-arrow-up"></i> Pulang</span>
+                </div>
+                <div class="stat-value" id="stat-jam-pulang">–</div>
+                <div class="stat-desc">Jam Pulang Hari Ini</div>
+              </div>
+
+              <!-- Durasi Kerja Live Card -->
+              <div class="card stat-card">
+                <div class="stat-card-header">
+                  <div class="stat-icon blue"><i class="fas fa-stopwatch"></i></div>
+                  <span class="stat-pill blue" id="stat-durasi-badge"><i class="fas fa-bolt"></i> Live Timer</span>
+                </div>
+                <div class="stat-value" id="stat-durasi-display">00:00:00</div>
+                <div class="stat-desc">Total Durasi Kerja</div>
+              </div>
+
+              <!-- Status Hari Ini Card -->
+              <div class="card stat-card">
+                <div class="stat-card-header">
+                  <div class="stat-icon orange"><i class="fas fa-id-card"></i></div>
+                  <span class="stat-pill orange"><i class="fas fa-fingerprint"></i> Status</span>
+                </div>
+                <div class="stat-value" id="stat-status-hari-ini">Belum Absen</div>
+                <div class="stat-desc">Status Presensi Hari Ini</div>
+              </div>
+            </div>
+
+            <!-- Row 2: Camera Terminal Card (left) + Status & Journey Card (right) -->
+            <div class="cards-row cards-row-2-1">
+              <!-- Kamera & Absen Card -->
+              <div class="card attendance-card">
+                <div class="card-header">
+                  <div>
+                    <span class="card-title-lg">
+                      <i class="fas fa-camera" style="color:var(--brand);margin-right:8px"></i>Absen dengan Kamera
+                    </span>
+                    <div class="card-subtitle">Verifikasi wajah dan titik koordinat GPS</div>
+                  </div>
+                  <div class="badge-terminal-live">
+                    <span class="pulse-dot"></span> Terminal Siap
+                  </div>
+                </div>
+
+                <!-- Location GPS ribbon -->
+                <div class="location-badge" style="cursor:pointer;" title="Klik untuk membuka titik GPS di Google Maps">
+                  <div class="location-badge-left">
+                    <i class="fas fa-location-dot"></i>
+                    <span id="realtime-location">Mendeteksi lokasi GPS...</span>
+                  </div>
+                  <span class="location-maps-link"><i class="fas fa-up-right-from-square"></i> Buka Maps</span>
+                </div>
+
+                <!-- Camera feed container -->
+                <div class="camera-container">
+                  <div class="camera-scanner-corner top-left"></div>
+                  <div class="camera-scanner-corner top-right"></div>
+                  <div class="camera-scanner-corner bottom-left"></div>
+                  <div class="camera-scanner-corner bottom-right"></div>
+
+                  <video id="video" playsinline muted class="camera-off" aria-label="Kamera untuk absensi"></video>
+
+                  <div class="camera-off-overlay" id="cameraOffOverlay">
+                    <div class="camera-off-icon-circle"><i class="fas fa-video-slash"></i></div>
+                    <span class="camera-off-title">Kamera Belum Aktif</span>
+                    <span class="camera-off-sub">Klik tombol "Nyalakan Kamera" untuk verifikasi wajah</span>
+                  </div>
+
+                  <div class="camera-controls">
+                    <button id="toggleCameraButton" class="btn btn-camera-toggle" aria-label="Toggle Kamera">
+                      <i class="fas fa-video"></i>
+                      <span>Nyalakan Kamera</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Absen buttons -->
+                <div class="absen-buttons">
+                  <button id="clockInButton" class="btn btn-absen-masuk">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Absen Masuk</span>
+                  </button>
+                  <button id="clockOutButton" class="btn btn-absen-pulang">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Absen Pulang</span>
+                  </button>
+                </div>
+                <canvas id="snapshot" aria-hidden="true"></canvas>
+              </div>
+
+              <!-- Status & Live Clock Today Card -->
+              <div class="card attendance-status-card">
+                <div class="card-header">
+                  <span class="card-title-lg">
+                    <i class="fas fa-clock" style="color:var(--brand);margin-right:8px"></i>Waktu & Status Hari Ini
+                  </span>
+                </div>
+
+                <!-- Digital Clock & Shift Box -->
+                <div class="time-card-modern">
+                  <div class="live-clock-badge"><i class="fas fa-satellite"></i> WAKTU REAL-TIME</div>
+                  <div class="live-time" id="card-live-clock">00:00:00</div>
+                  <div class="live-date" id="card-live-date">–</div>
+                  <div class="shift-info-modern">
+                    <i class="fas fa-business-time"></i>
+                    <span id="shift-label">Shift Pagi: 08:00 – 17:00</span>
+                  </div>
+                </div>
+
+                <!-- Attendance Journey / Steps Tracker -->
+                <div class="attendance-journey">
+                  <div class="journey-item">
+                    <div class="journey-indicator">
+                      <div class="status-dot" id="dot-masuk"></div>
+                    </div>
+                    <div class="journey-content">
+                      <div class="journey-label">Absen Masuk</div>
+                      <div class="journey-sub">Pencatatan awal shift</div>
+                    </div>
+                    <div class="journey-time" id="status-time-masuk">–</div>
+                  </div>
+
+                  <div class="journey-item">
+                    <div class="journey-indicator">
+                      <div class="status-dot" id="dot-pulang"></div>
+                    </div>
+                    <div class="journey-content">
+                      <div class="journey-label">Absen Pulang</div>
+                      <div class="journey-sub">Penyelesaian shift kerja</div>
+                    </div>
+                    <div class="journey-time" id="status-time-pulang">–</div>
+                  </div>
+
+                  <div class="journey-item highlight-item">
+                    <div class="journey-indicator">
+                      <div class="status-dot" id="dot-status-keseluruhan"></div>
+                    </div>
+                    <div class="journey-content">
+                      <div class="journey-label">Keseluruhan Hari Ini</div>
+                      <div class="journey-sub">Hasil verifikasi sistem</div>
+                    </div>
+                    <div class="journey-time" id="status-keseluruhan-label">–</div>
+                  </div>
+                </div>
+
+                <!-- Live Work Duration Box -->
+                <div class="work-timer-container-modern" id="workTimerContainer">
+                  <div class="work-timer-icon"><i class="fas fa-stopwatch"></i></div>
+                  <div class="work-timer-info">
+                    <div class="work-timer-label">Durasi Kerja Aktif</div>
+                    <div id="liveWorkDuration" class="work-timer-value">00:00:00</div>
+                  </div>
+                  <span id="liveWorkStatusBadge" class="badge badge-gray">Belum Masuk</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 3: Riwayat Kehadiran Hari Ini -->
+            <div class="card riwayat-card">
+              <div class="card-inner">
+                <div class="card-header">
+                  <div>
+                    <span class="card-title-lg">
+                      <i class="fas fa-history" style="color:var(--brand);margin-right:8px"></i>Riwayat Kehadiran Hari
+                      Ini
+                    </span>
+                    <div class="card-subtitle">Catatan presensi masuk dan pulang hari ini</div>
+                  </div>
+                </div>
+                <div class="riwayat-container">
+                  <div id="riwayatContainer" class="riwayat-list"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /desktop-dashboard-view -->
+
+          <!-- ========== MOBILE SIMPLIFIED VIEW (HADIRR-STYLE) ========== -->
+          <div class="mobile-hadirr-view">
+
+            <!-- Mobile Header Bar -->
+            <div class="hadirr-header-bar">
+              <div class="hadirr-brand">
+                <img src="css/asset/LOGO.png" alt="Logo Angkasa" class="hadirr-logo"
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="hadirr-logo-text" style="display:none;">
+                  <span>angkasa</span>
+                </div>
+              </div>
+              <div class="hadirr-profile-trigger" onclick="switchMobileTab('profile')">
+                <img src="Admin-Avatar.png" alt="User" class="hadirr-avatar" id="mobileHadirrAvatar">
+              </div>
+            </div>
+
+            <!-- Greeting Section (matching reference) -->
+            <div class="hadirr-greeting-section">
+              <h1 class="hadirr-greeting-title" id="hadirrGreetingTitle">Good Morning</h1>
+              <p class="hadirr-greeting-subtitle">Semangat kerjanya & selalu jaga keselamatan!</p>
+              <div class="hadirr-status-badge-row">
+                <div class="hadirr-mini-pill" id="hadirrStatusMiniPill">
+                  <span class="pulse-dot"></span>
+                  <span id="hadirrStatusText">Belum Absen Masuk</span>
+                </div>
+                <div class="hadirr-mini-pill time-pill">
+                  <i class="fas fa-clock"></i>
+                  <span id="hadirrLiveClock">00:00:00</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2-Column Action Cards Grid (Exact Hadirr Style) -->
+            <div class="hadirr-action-grid">
+
+              <!-- 1. Clock In -->
+              <button type="button" class="hadirr-grid-card" id="cardClockIn"
+                onclick="openMobileCameraModal('clockin')">
+                <div class="hadirr-card-icon-box">
+                  <svg width="54" height="54" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 36L28 26L52 36L36 46L12 36Z" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                    <path d="M12 36V44L36 54V46" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                    <path d="M32 14V28M32 28L25 21M32 28L39 21" stroke="#F59E0B" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="48" cy="48" r="11" fill="#FFFBEB" stroke="#F59E0B" stroke-width="2" />
+                    <path d="M48 43V48L51 51" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <span class="hadirr-card-title">Clock In</span>
+                <span class="hadirr-card-sub" id="hadirrCardSubMasuk">Belum Absen</span>
+              </button>
+
+              <!-- 2. Clock Out -->
+              <button type="button" class="hadirr-grid-card" id="cardClockOut"
+                onclick="openMobileCameraModal('clockout')">
+                <div class="hadirr-card-icon-box">
+                  <svg width="54" height="54" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 36L28 26L52 36L36 46L12 36Z" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                    <path d="M12 36V44L36 54V46" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"
+                      stroke-linejoin="round" />
+                    <path d="M32 28V14M32 14L25 21M32 14L39 21" stroke="#F59E0B" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="48" cy="48" r="11" fill="#FFFBEB" stroke="#F59E0B" stroke-width="2" />
+                    <path d="M48 43V48L51 51" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <span class="hadirr-card-title">Clock Out</span>
+                <span class="hadirr-card-sub" id="hadirrCardSubPulang">Belum Absen</span>
+              </button>
+
+              <!-- 3. Pengajuan Izin -->
+              <button type="button" class="hadirr-grid-card" onclick="switchMobileTab('pengajuanIzin')">
+                <div class="hadirr-card-icon-box">
+                  <svg width="54" height="54" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="16" y="12" width="32" height="42" rx="4" stroke="#F59E0B" stroke-width="2.5" />
+                    <path d="M24 22H40M24 30H40M24 38H34" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" />
+                    <circle cx="44" cy="44" r="8" fill="#FFFBEB" stroke="#F59E0B" stroke-width="2" />
+                    <path d="M44 40V48M40 44H48" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <span class="hadirr-card-title">Izin & Cuti</span>
+                <span class="hadirr-card-sub">Formulir Pengajuan</span>
+              </button>
+
+              <!-- 4. Rekap Absensi -->
+              <button type="button" class="hadirr-grid-card" onclick="switchMobileTab('rekapAbsensi')">
+                <div class="hadirr-card-icon-box">
+                  <svg width="54" height="54" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 16H44V50C44 51.1 43.1 52 42 52H22C20.9 52 20 51.1 20 50V16Z" stroke="#F59E0B"
+                      stroke-width="2.5" />
+                    <path d="M26 12H38V16H26V12Z" stroke="#F59E0B" stroke-width="2.5" />
+                    <path d="M26 26H38M26 34H38M26 42H32" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <span class="hadirr-card-title">Rekap Absen</span>
+                <span class="hadirr-card-sub">Slip & Riwayat</span>
+              </button>
+
+              <!-- 5. Durasi Kerja -->
+              <button type="button" class="hadirr-grid-card" id="cardDurasiKerja">
+                <div class="hadirr-card-icon-box">
+                  <svg width="54" height="54" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="32" cy="34" r="20" stroke="#F59E0B" stroke-width="2.5" />
+                    <path d="M32 10V14M28 10H36" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" />
+                    <path d="M32 24V34L38 38" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" />
+                    <path d="M46 18L49 15" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <span class="hadirr-card-title">Durasi Kerja</span>
+                <span class="hadirr-card-sub text-highlight" id="hadirrCardDuration">00:00:00</span>
+              </button>
+
+              <!-- 6. Lokasi Kantor -->
+              <button type="button" class="hadirr-grid-card" onclick="openOfficeMapLocation()">
+                <div class="hadirr-card-icon-box">
+                  <svg width="54" height="54" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M32 12C23.16 12 16 19.16 16 28C16 39.5 30 51.2 31.2 52.2C31.7 52.6 32.3 52.6 32.8 52.2C34 51.2 48 39.5 48 28C48 19.16 40.84 12 32 12Z"
+                      stroke="#F59E0B" stroke-width="2.5" />
+                    <circle cx="32" cy="28" r="6" stroke="#F59E0B" stroke-width="2.5" />
+                  </svg>
+                </div>
+                <span class="hadirr-card-title">Lokasi Kantor</span>
+                <span class="hadirr-card-sub" id="hadirrCardLocation">Radius Valid</span>
+              </button>
+
+            </div>
+
+            <!-- Quick Today Mini Timeline -->
+            <div class="hadirr-mini-timeline-card">
+              <div class="mini-tl-header">
+                <span><i class="fas fa-history" style="color:#F59E0B;margin-right:6px"></i>Status Hari Ini</span>
+                <span class="mini-tl-date" id="hadirrTodayShortDate">–</span>
+              </div>
+              <div class="mini-tl-row">
+                <div class="mini-tl-item">
+                  <span class="tl-lbl">Jam Masuk</span>
+                  <span class="tl-val" id="hadirrMiniMasuk">–</span>
+                </div>
+                <div class="mini-tl-sep"></div>
+                <div class="mini-tl-item">
+                  <span class="tl-lbl">Jam Pulang</span>
+                  <span class="tl-val" id="hadirrMiniPulang">–</span>
+                </div>
+                <div class="mini-tl-sep"></div>
+                <div class="mini-tl-item">
+                  <span class="tl-lbl">Status</span>
+                  <span class="tl-val" id="hadirrMiniStatus">Belum Absen</span>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /mobile-hadirr-view -->
+
+        </section>
+
+        <!-- ========== TAB: REKAP ABSENSI ========== -->
+        <section id="rekapAbsensi" class="tab-content" aria-label="Tab Rekap Absensi">
+          <div class="section-heading">
+            <div class="section-heading-icon"><i class="fas fa-clipboard-list"></i></div>
+            <div>
+              <h1>Rekap Absensi</h1>
+              <p>Ringkasan kehadiran bulanan Anda</p>
+            </div>
+          </div>
+
+          <div class="rekap-filter">
+            <div class="filter-input-row" style="display:flex;align-items:center;gap:10px;width:100%;flex:1;">
+              <i class="fas fa-filter" style="color:var(--brand)"></i>
+              <label for="bulanRekap" style="font-weight:600;font-size:13px;white-space:nowrap;">Pilih Bulan:</label>
+              <input type="month" id="bulanRekap" name="bulanRekap" aria-label="Filter bulan rekap" style="flex:1;">
+            </div>
+            <div class="rekap-action-buttons" style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary" id="tampilkanRekapBtn" style="flex:1;min-width:110px;">
+                <i class="fas fa-search"></i> Tampilkan
+              </button>
+              <button class="btn btn-outline" id="cetakSlipBtn" title="Cetak slip rekap bulanan"
+                style="flex:1;min-width:110px;">
+                <i class="fas fa-print"></i> Cetak Slip
+              </button>
+              <button class="btn btn-outline" id="exportCsvBtn" title="Unduh data ke format CSV"
+                style="flex:1;min-width:110px;">
+                <i class="fas fa-file-csv"></i> Unduh CSV
+              </button>
+            </div>
+          </div>
+
+          <div class="card rekap-detail-list">
+            <h2><i class="fas fa-list-ul"></i> Detail Kehadiran</h2>
+            <ul id="detailRekapList" aria-label="Daftar rekap kehadiran"></ul>
+          </div>
+        </section>
+
+        <!-- ========== TAB: PENGAJUAN IZIN ========== -->
+        <section id="pengajuanIzin" class="tab-content" aria-label="Tab Pengajuan Izin">
+          <div class="section-heading">
+            <div class="section-heading-icon"><i class="fas fa-file-medical"></i></div>
+            <div>
+              <h1>Pengajuan Izin / Cuti / Sakit</h1>
+              <p>Formulir online permohonan dispensasi kehadiran karyawan</p>
+            </div>
+          </div>
+
+          <div class="card card-inner" style="max-width:600px">
+            <div class="card-header" style="margin-bottom:20px">
+              <span class="card-title-lg"><i class="fas fa-calendar-plus"
+                  style="color:var(--brand);margin-right:6px"></i>Formulir Permohonan</span>
+            </div>
+            <form id="formPengajuanIzin" onsubmit="handlePengajuanIzin(event)">
+              <div class="info-group">
+                <label for="tipeIzin">Jenis Pengajuan</label>
+                <select id="tipeIzin" required
+                  style="width:100%;padding:10px 14px;border:1.5px solid var(--border-color);border-radius:10px;background:var(--bg-card);color:var(--text-main);font-family:inherit;font-size:14px">
+                  <option value="Izin">Izin Tidak Masuk</option>
+                  <option value="Sakit">Sakit (Surat Dokter / Istirahat)</option>
+                  <option value="Cuti">Cuti Tahunan / Khusus</option>
+                </select>
+              </div>
+              <div class="info-group">
+                <label for="tanggalIzin">Tanggal Berlaku</label>
+                <input type="date" id="tanggalIzin" required>
+              </div>
+              <div class="info-group">
+                <label for="alasanIzin">Alasan / Keterangan Keperluan</label>
+                <textarea id="alasanIzin" rows="3"
+                  placeholder="Contoh: Mengurus keperluan keluarga mendesak / Istirahat medis" required
+                  style="width:100%;padding:12px;border:1.5px solid var(--border-color);border-radius:10px;background:var(--bg-card);color:var(--text-main);font-family:inherit;font-size:14px;resize:vertical"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block" id="btnSubmitIzin">
+                <i class="fas fa-paper-plane"></i> Kirim Pengajuan
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- ========== TAB: PROFIL ========== -->
+        <section id="profile" class="tab-content" aria-label="Tab Profil Saya">
+          <div class="section-heading">
+            <div class="section-heading-icon"><i class="fas fa-user-circle"></i></div>
+            <div>
+              <h1>Profil Saya</h1>
+              <p>Kelola informasi akun dan foto profil Anda</p>
+            </div>
+          </div>
+
+          <div class="profile-layout">
+            <!-- Left: Photo -->
+            <div class="profile-left-column">
+              <div class="card card-inner" style="text-align:center">
+                <div class="profile-main-image-container">
+                  <img src="Admin-Avatar.png" alt="Foto Profil Utama" id="mainProfilePic">
+                  <input type="file" id="uploadProfilePic" style="display:none" accept="image/*"
+                    aria-label="Upload foto profil">
+                </div>
+                <div class="profile-photo-actions">
+                  <button class="btn btn-outline btn-block" id="changePhotoBtn">
+                    <i class="fas fa-camera"></i> Ganti Foto
+                  </button>
+                </div>
+                <div class="divider"></div>
+                <div style="font-size:12px;color:var(--text-muted);text-align:center">
+                  Format: JPG, PNG, GIF<br>Maks. 2MB
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Form -->
+            <div class="profile-right-column">
+              <form id="profileForm" class="card card-inner">
+                <div class="card-header" style="margin-bottom:20px">
+                  <span class="card-title-lg">Informasi Akun</span>
+                  <span class="badge badge-blue" id="profile-role-badge">Karyawan</span>
+                </div>
+
+                <div class="info-group">
+                  <label for="profileNama">Nama Lengkap</label>
+                  <input type="text" id="profileNama" autocomplete="name" readonly>
+                </div>
+                <div class="info-group">
+                  <label for="profileEmail">Email</label>
+                  <input type="email" id="profileEmail" autocomplete="email" readonly>
+                </div>
+                <div class="info-group">
+                  <label for="profileTelepon">No. Telepon</label>
+                  <input type="tel" id="profileTelepon" autocomplete="tel" readonly>
+                </div>
+
+                <div class="profile-form-actions">
+                  <button type="button" class="btn btn-ghost" id="cancelProfileBtn" style="display:none">
+                    <i class="fas fa-times"></i> Batal
+                  </button>
+                  <button type="submit" id="saveProfileBtn" class="btn btn-primary" style="display:none">
+                    <i class="fas fa-save"></i> Simpan
+                  </button>
+                  <button type="button" class="btn btn-outline" id="editProfileBtn">
+                    <i class="fas fa-edit"></i> Edit Profil
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== TAB: UBAH PASSWORD ========== -->
+        <section id="password" class="tab-content" aria-label="Tab Ubah Password">
+          <div class="section-heading">
+            <div class="section-heading-icon"><i class="fas fa-lock"></i></div>
+            <div>
+              <h1>Ubah Password</h1>
+              <p>Perbarui kata sandi akun Anda secara berkala untuk keamanan</p>
+            </div>
+          </div>
+
+          <div class="card card-inner" style="max-width:480px">
+            <div class="card-header" style="margin-bottom:20px">
+              <span class="card-title-lg"><i class="fas fa-shield-alt"
+                  style="color:var(--brand);margin-right:6px"></i>Keamanan Akun</span>
+            </div>
+            <form class="password-form" onsubmit="return false;" id="changePasswordForm">
+              <div class="info-group">
+                <label for="oldPassword">Password Lama</label>
+                <input type="password" id="oldPassword" required autocomplete="current-password"
+                  placeholder="Masukkan password lama">
+              </div>
+              <div class="info-group">
+                <label for="newPassword">Password Baru</label>
+                <input type="password" id="newPassword" required autocomplete="new-password"
+                  placeholder="Masukkan password baru">
+              </div>
+              <div class="info-group">
+                <label for="confirmNewPassword">Konfirmasi Password Baru</label>
+                <input type="password" id="confirmNewPassword" required autocomplete="new-password"
+                  placeholder="Ulangi password baru">
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">
+                <i class="fas fa-save"></i> Simpan Password
+              </button>
+            </form>
+          </div>
+        </section>
+
+      </main>
+    </div><!-- /main-content -->
+  </div><!-- /dashboard-container -->
+
+  <!-- Floating Mobile Bottom Dock (Exact Hadirr/Modern App Navigation) -->
+  <nav class="mobile-bottom-dock" id="mobileBottomDock" aria-label="Navigasi Bawah">
+    <button type="button" class="dock-item active" data-tab="kehadiran" onclick="switchMobileTab('kehadiran')">
+      <div class="dock-icon-wrapper"><i class="fas fa-home"></i></div>
+      <span>Home</span>
+    </button>
+    <button type="button" class="dock-item" data-tab="rekapAbsensi" onclick="switchMobileTab('rekapAbsensi')">
+      <div class="dock-icon-wrapper"><i class="fas fa-clipboard-list"></i></div>
+      <span>Rekap</span>
+    </button>
+    <button type="button" class="dock-item" data-tab="pengajuanIzin" onclick="switchMobileTab('pengajuanIzin')">
+      <div class="dock-icon-wrapper"><i class="fas fa-calendar-plus"></i></div>
+      <span>Izin</span>
+    </button>
+    <button type="button" class="dock-item" data-tab="profile" onclick="switchMobileTab('profile')">
+      <div class="dock-icon-wrapper"><i class="fas fa-user"></i></div>
+      <span>Profil</span>
+    </button>
+  </nav>
+
+  <!-- Mobile Camera Absen Bottom Sheet Modal -->
+  <div class="mobile-camera-modal" id="mobileCameraModal" style="display:none;">
+    <div class="camera-modal-backdrop" onclick="closeMobileCameraModal()"></div>
+    <div class="camera-modal-content">
+      <div class="camera-modal-header">
+        <h3 id="mobileModalActionTitle"><i class="fas fa-camera" style="color:#f59e0b;margin-right:8px;"></i>Absen Masuk
+        </h3>
+        <button type="button" class="camera-modal-close" onclick="closeMobileCameraModal()">&times;</button>
+      </div>
+      <div class="camera-modal-body">
+        <div class="location-badge" style="margin-bottom:12px;cursor:pointer;" onclick="openOfficeMapLocation()">
+          <i class="fas fa-map-marker-alt"></i>
+          <span id="modal-realtime-location">Mendeteksi lokasi GPS...</span>
+        </div>
+        <div class="camera-container"
+          style="height:250px;margin-bottom:14px;border-radius:14px;overflow:hidden;position:relative;">
+          <video id="modalVideo" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover;"></video>
+          <div class="camera-face-frame"></div>
+        </div>
+        <div class="modal-time-display" style="text-align:center;margin-bottom:14px;">
+          <div id="modalLiveClock" style="font-size:24px;font-weight:800;font-family:monospace;color:var(--text-main);">
+            00:00:00</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Posisikan wajah Anda jelas di kamera</div>
+        </div>
+        <button type="button" class="btn btn-primary btn-block btn-lg" id="modalConfirmAbsenBtn"
+          onclick="confirmMobileAttendance()" style="height:52px;font-size:16px;font-weight:700;border-radius:12px;">
+          <i class="fas fa-camera"></i> Ambil Foto & Absen
+        </button>
+      </div>
     </div>
-    <!-- Tautan ke file JavaScript eksternal -->
-    <script src="js/dashboard.js"></script>
+  </div>
+
+  <script src="js/dashboard.js"></script>
 </body>
+
 </html>

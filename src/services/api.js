@@ -1,6 +1,33 @@
 // Central API Service Client for Angkasa Absen
 
-const API_BASE = '/api';
+/**
+ * Detect the correct API base URL:
+ * - In Capacitor iOS (file:// protocol) → use Mac's LAN IP
+ * - In browser dev (Vite proxy) → use relative /api (proxied to localhost:3000)
+ * - In browser production (deployed) → use relative /api
+ *
+ * ⚠️ PENTING: Ganti SERVER_IP dengan IP komputer/server kamu yang menjalankan node server.js
+ *    Jalankan di terminal: ipconfig getifaddr en0
+ *    iPhone dan Mac HARUS terhubung ke WiFi yang SAMA
+ */
+const SERVER_IP = '192.168.1.46';
+const SERVER_PORT = 3000;
+
+function getApiBase() {
+  // Capacitor native app (iOS/Android) — uses file:// or capacitor://
+  const isCapacitor = window.Capacitor !== undefined && window.Capacitor.isNativePlatform();
+  const isFileProtocol = window.location.protocol === 'file:';
+  const isCapacitorProtocol = window.location.protocol === 'capacitor:';
+
+  if (isCapacitor || isFileProtocol || isCapacitorProtocol) {
+    return `http://${SERVER_IP}:${SERVER_PORT}/api`;
+  }
+
+  // Web browser (dev or deployed) — use relative path (proxied by Vite or served by Express)
+  return '/api';
+}
+
+const API_BASE = getApiBase();
 
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
@@ -121,5 +148,5 @@ export const api = {
     request(`/rekap/bulanan?bulan=${bulan}`),
 
   downloadRecapExcelUrl: (bulan) =>
-    `/api/rekap/download?bulan=${bulan}`
+    `${API_BASE}/rekap/download?bulan=${bulan}`
 };

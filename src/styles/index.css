@@ -1,3 +1,6 @@
+@import "tailwindcss";
+
+
 /* ==========================================================================
    ANGKASA ABSEN — Master Design System (Mobile-First & Desktop Adaptive)
    Official Brand Palette: Angkasa Red (#e60000)
@@ -110,63 +113,34 @@ body.dark-mode {
   padding: 0;
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
-  font-family: "Google Sans", sans-serif;
 }
 
 html, body {
   width: 100%;
+  max-width: 100%;
   min-height: 100%;
-  font-family: "Google Sans", sans-serif;
-  font-optical-sizing: auto;
-  font-style: normal;
-  font-variation-settings: "GRAD" 0;
+  margin: 0;
+  padding: 0;
+  font-family: "Plus Jakarta Sans", "Google Sans", -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--bg-page);
   color: var(--text-main);
-  overflow-x: clip;
-  font-size: 14px;
-  line-height: 1.5;
-  font-weight: 400;
-  transition: background-color var(--transition), color var(--transition);
+  overflow-x: hidden;
 }
 
-/* Typography Weights */
-h1, h2, h3, h4, h5, h6, .font-bold {
-  font-family: "Google Sans", sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.font-light {
-  font-weight: 400;
-}
-
-.font-regular {
-  font-weight: 400;
-}
-
-.font-medium {
-  font-weight: 500;
-}
-
-.font-extrabold, .font-black {
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-p, .text-muted, .text-secondary {
-  font-weight: 400;
-}
-
-b, strong {
-  font-weight: 700;
-}
-
-button, input, select, textarea {
-  font-family: "Google Sans", sans-serif;
-  font-optical-sizing: auto;
-  font-variation-settings: "GRAD" 0;
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined' !important;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'liga';
 }
 
 /* Scrollbar customization */
@@ -399,3 +373,107 @@ body.dark-mode .badge-blue { background: rgba(59, 130, 246, 0.15); border-color:
   color: var(--text-primary);
   margin: 0;
 }
+
+/* ============================================================
+   iOS / Capacitor Native App Styles
+   Edge-to-edge / full-screen with overlay status bar
+   ============================================================ */
+
+/* Prevent rubber-band over-scroll on iOS */
+html.is-mobile-app,
+html.is-mobile-app body {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* Root scroll container — fills full screen */
+html.is-mobile-app #root {
+  height: 100%;
+  height: 100dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+}
+
+/*
+ * Safe area handling — because status bar OVERLAYS the webview,
+ * content starts at y=0 (behind status bar).
+ * We add padding-top = safe-area-inset-top so content isn't HIDDEN under it.
+ * The background image/color still bleeds all the way to the top edge → full screen ✅
+ */
+
+/* App shell layouts: offset content below status bar */
+html.is-mobile-app .app-layout,
+html.is-mobile-app .admin-layout {
+  padding-top: 0; /* handled per-page via .ios-topbar-spacer */
+}
+
+/* Generic top spacer — add this class to fixed headers */
+html.is-mobile-app .ios-safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Bottom nav: taller on iOS to cover home indicator */
+html.is-mobile-app .mobile-dock,
+html.is-mobile-app .bottom-nav,
+html.is-mobile-app [class*="dock"] {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  height: calc(68px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Page content: pad so bottom nav doesn't cover last item */
+html.is-mobile-app .page-content,
+html.is-mobile-app .main-content,
+html.is-mobile-app .app-content,
+html.is-mobile-app .page-container {
+  padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px) + 16px);
+}
+
+/* Keyboard open: shrink viewport */
+html.is-mobile-app.keyboard-open .page-container,
+html.is-mobile-app.keyboard-open .app-content {
+  padding-bottom: calc(var(--keyboard-height, 0px) + 16px);
+}
+
+/* Remove native text selection callouts */
+html.is-mobile-app * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+html.is-mobile-app input,
+html.is-mobile-app textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Momentum scrolling on all scroll containers */
+html.is-mobile-app .page-container,
+html.is-mobile-app [class*="-scroll"],
+html.is-mobile-app [class*="scroll-"] {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Remove 300ms tap delay */
+html.is-mobile-app button,
+html.is-mobile-app a,
+html.is-mobile-app [role="button"] {
+  touch-action: manipulation;
+}
+
+/* ── Login page: hero image bleeds to top edge ─────────────── */
+/* The login visual panel bg extends behind the status bar     */
+html.is-mobile-app .login-mobile-hero {
+  padding-top: env(safe-area-inset-top, 0px);
+  /* background extends to physical top of screen */
+  margin-top: calc(-1 * env(safe-area-inset-top, 0px));
+}
+
+/* Login bottom card stays above home bar */
+html.is-mobile-app .login-mobile-form-card {
+  padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px);
+}
+

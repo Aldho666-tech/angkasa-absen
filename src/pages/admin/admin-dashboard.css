@@ -1,0 +1,642 @@
+/* ==========================================================================
+   Admin Dashboard Monitoring Styles
+   Matches Reference: Monitoring.html
+   ========================================================================== */
+
+.adm-mon-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* ── Top Header Brief ── */
+.adm-mon-header-brief {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.adm-mon-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-mon-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0b1c30;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.dark .adm-mon-title {
+  color: #f8f9ff;
+}
+
+.adm-mon-subtitle {
+  font-size: 12px;
+  color: #545f73;
+  margin-top: 4px;
+}
+
+.dark .adm-mon-subtitle {
+  color: #94a3b8;
+}
+
+.adm-mon-btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #ffffff;
+  color: #b80035;
+  border-radius: 9999px;
+  border: 1px solid rgba(225, 29, 72, 0.15);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.dark .adm-mon-btn-refresh {
+  background: #162235;
+  color: #ffb3b6;
+  border-color: rgba(255, 179, 182, 0.2);
+}
+
+.adm-mon-btn-refresh:active {
+  transform: scale(0.96);
+  opacity: 0.8;
+}
+
+.adm-mon-refresh-spin {
+  animation: adm-spin 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes adm-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Metric Overview Bento Cards (2x2 Grid) ── */
+.adm-mon-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.adm-mon-bento-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(11, 28, 48, 0.03);
+  border: 1px solid #e5eeff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.dark .adm-mon-bento-card {
+  background: #141f30;
+  border-color: #24344d;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.adm-mon-card-indicator {
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 5px;
+  border-top-right-radius: 9999px;
+  border-bottom-right-radius: 9999px;
+}
+
+.adm-mon-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.adm-mon-card-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-mon-card-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 9999px;
+}
+
+.adm-mon-card-body {
+  margin-top: 16px;
+}
+
+.adm-mon-card-val {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0b1c30;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.dark .adm-mon-card-val {
+  color: #f8f9ff;
+}
+
+.adm-mon-card-label {
+  font-size: 12px;
+  color: #545f73;
+  margin-top: 5px;
+}
+
+.dark .adm-mon-card-label {
+  color: #94a3b8;
+}
+
+/* ── Operational Focus Banner ── */
+.adm-mon-banner {
+  background: linear-gradient(135deg, #b80035 0%, #be0037 60%, #e11d48 100%);
+  border-radius: 20px;
+  padding: 16px 20px;
+  color: #ffffff;
+  box-shadow: 0 10px 25px rgba(184, 0, 53, 0.22);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.adm-mon-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 2;
+}
+
+.adm-mon-banner-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+.adm-mon-banner-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-mon-banner-title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.adm-mon-banner-desc {
+  font-size: 12px;
+  opacity: 0.92;
+  margin-top: 2px;
+}
+
+.adm-mon-banner-faint {
+  position: absolute;
+  right: -12px;
+  bottom: -22px;
+  opacity: 0.16;
+  pointer-events: none;
+  font-size: 110px !important;
+  color: #ffffff;
+  line-height: 1;
+}
+
+/* ── Log Presensi Harian Card ── */
+.adm-mon-log-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: 0 2px 12px rgba(11, 28, 48, 0.03);
+  border: 1px solid #e5eeff;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dark .adm-mon-log-card {
+  background: #141f30;
+  border-color: #24344d;
+}
+
+.adm-mon-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.adm-mon-log-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adm-mon-log-header-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0b1c30;
+  margin: 0;
+}
+
+.dark .adm-mon-log-header-title {
+  color: #f8f9ff;
+}
+
+.adm-mon-log-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: #eff4ff;
+  color: #545f73;
+}
+
+.dark .adm-mon-log-badge {
+  background: #1e2c42;
+  color: #a0aec0;
+}
+
+/* ── Controls (Search, Date, Filter) ── */
+.adm-mon-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.adm-mon-search-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.adm-mon-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #545f73;
+  font-size: 20px;
+  pointer-events: none;
+}
+
+.adm-mon-search-input {
+  width: 100%;
+  background: #eff4ff;
+  color: #0b1c30;
+  border-radius: 16px;
+  padding: 12px 14px 12px 44px;
+  font-size: 13px;
+  font-family: inherit;
+  border: 1px solid transparent;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.dark .adm-mon-search-input {
+  background: #1a273b;
+  color: #f8f9ff;
+}
+
+.adm-mon-search-input:focus {
+  background: #e5eeff;
+  border-color: rgba(225, 29, 72, 0.3);
+}
+
+.dark .adm-mon-search-input:focus {
+  background: #203049;
+}
+
+.adm-mon-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-mon-date-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #eff4ff;
+  padding: 10px 14px;
+  border-radius: 16px;
+  flex: 1;
+  border: 1px solid #e5eeff;
+}
+
+.dark .adm-mon-date-box {
+  background: #1a273b;
+  border-color: #24344d;
+}
+
+.adm-mon-date-input {
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0b1c30;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+}
+
+.dark .adm-mon-date-input {
+  color: #f8f9ff;
+}
+
+.adm-mon-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #eff4ff;
+  color: #545f73;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid #e5eeff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.dark .adm-mon-filter-btn {
+  background: #1a273b;
+  border-color: #24344d;
+  color: #94a3b8;
+}
+
+.adm-mon-filter-btn:hover {
+  background: #e5eeff;
+  color: #0b1c30;
+}
+
+.dark .adm-mon-filter-btn:hover {
+  background: #203049;
+  color: #f8f9ff;
+}
+
+/* ── Attendance Cards List ── */
+.adm-mon-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.adm-mon-card-row {
+  background: rgba(239, 244, 255, 0.7);
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(229, 238, 255, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.dark .adm-mon-card-row {
+  background: rgba(26, 39, 59, 0.6);
+  border-color: rgba(36, 52, 77, 0.8);
+}
+
+.adm-mon-card-row:hover {
+  background: #eff4ff;
+}
+
+.dark .adm-mon-card-row:hover {
+  background: #1e2d44;
+}
+
+.adm-mon-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.adm-mon-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.adm-mon-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.adm-mon-user-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-mon-user-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0b1c30;
+  text-transform: capitalize;
+}
+
+.dark .adm-mon-user-name {
+  color: #f8f9ff;
+}
+
+.adm-mon-user-sub {
+  font-size: 12px;
+  color: #545f73;
+}
+
+.dark .adm-mon-user-sub {
+  color: #94a3b8;
+}
+
+/* Status Pill */
+.adm-mon-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Timestamps Rail */
+.adm-mon-rail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(229, 238, 255, 0.6);
+}
+
+.dark .adm-mon-rail {
+  background: #141f30;
+  border-color: #24344d;
+}
+
+.adm-mon-rail-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-mon-rail-lbl {
+  font-size: 11px;
+  color: #545f73;
+}
+
+.dark .adm-mon-rail-lbl {
+  color: #94a3b8;
+}
+
+.adm-mon-rail-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0b1c30;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+}
+
+.dark .adm-mon-rail-val {
+  color: #f8f9ff;
+}
+
+/* ── Realtime Sync Bar ── */
+.adm-mon-sync-bar {
+  background: #eff4ff;
+  border-radius: 20px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #e5eeff;
+  box-shadow: 0 1px 6px rgba(11, 28, 48, 0.02);
+}
+
+.dark .adm-mon-sync-bar {
+  background: #141f30;
+  border-color: #24344d;
+}
+
+.adm-mon-sync-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.adm-mon-ping-outer {
+  position: relative;
+  display: flex;
+  width: 12px;
+  height: 12px;
+}
+
+.adm-mon-ping-wave {
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  position: absolute;
+  display: inline-flex;
+  height: 100%;
+  width: 100%;
+  border-radius: 9999px;
+  background-color: #e11d48;
+  opacity: 0.75;
+}
+
+.adm-mon-ping-dot {
+  position: relative;
+  display: inline-flex;
+  border-radius: 9999px;
+  height: 12px;
+  width: 12px;
+  background-color: #e11d48;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.adm-mon-sync-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-mon-sync-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0b1c30;
+}
+
+.dark .adm-mon-sync-title {
+  color: #f8f9ff;
+}
+
+.adm-mon-sync-sub {
+  font-size: 11px;
+  color: #545f73;
+}
+
+.dark .adm-mon-sync-sub {
+  color: #94a3b8;
+}
+
+.adm-mon-sync-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e11d48;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.dark .adm-mon-sync-icon {
+  background: #1a273b;
+  color: #ffb3b6;
+}

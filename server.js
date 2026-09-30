@@ -671,14 +671,16 @@ app.use((req, res, next) => {
 });
 
 // Jalankan Server
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
     console.log(`====================================================`);
     console.log(`🚀 Server Angkasa Absen berjalan di: http://localhost:${port}`);
+    console.log(`📱 Akses dari iOS (WiFi sama): http://192.168.1.46:${port}`);
     console.log(`📁 Database: SQLite aktif (attendance.db)`);
     console.log(`🔑 Login Admin: adminaldo@gmail.com / admin123`);
     console.log(`👤 Login Karyawan: jaka@gmail.com / jaka123`);
     console.log(`====================================================`);
 });
+
 
 module.exports = app;
 

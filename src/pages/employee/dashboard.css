@@ -1,0 +1,194 @@
+/* ═══════════════════════════════════════════════════
+   DASHBOARD.CSS – Angkasa Absen Employee Dashboard
+   Matches Html Reference/Employee/dashboard.html
+   ═══════════════════════════════════════════════════ */
+
+/* Page wrapper */
+.db-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: #f8f9ff;
+  color: #0b1c30;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100%;
+}
+
+/* Inner content column - px-margin = 20px, gap-space-lg = 24px */
+.db-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0 1.25rem;
+  gap: 1.5rem;
+  box-sizing: border-box;
+}
+
+/* Feedback toast */
+.db-feedback {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 8px;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}
+.db-feedback.success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.db-feedback.error   { background: #fff1f2; color: #b80035; border: 1px solid #fecdd3; }
+.db-feedback-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.db-feedback-left .material-symbols-outlined { font-size: 18px; flex-shrink: 0; }
+.db-feedback-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.db-feedback-close { font-size: 16px; font-weight: 700; background: none; border: none; cursor: pointer; line-height: 1; padding: 0; color: inherit; }
+
+/* ── 1. GREETING SECTION ── */
+.db-greeting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
+}
+.db-greeting-left { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.db-greeting-label { font-size: 11px; line-height: 14px; letter-spacing: 0.055em; font-weight: 600; text-transform: uppercase; color: #545f73; }
+.db-greeting-name-row { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.db-greeting-name { font-size: 24px; line-height: 32px; letter-spacing: -0.015em; font-weight: 700; color: #0b1c30; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.db-greeting-emoji { font-size: 1.25rem; flex-shrink: 0; }
+.db-greeting-date { font-size: 12px; line-height: 18px; color: #545f73; font-weight: 400; margin-top: 2px; }
+.db-avatar-wrap { position: relative; width: 48px; height: 48px; border-radius: 9999px; overflow: hidden; background: #dce9ff; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.db-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.db-avatar-dot { position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; background: #10b981; border-radius: 9999px; box-shadow: 0 0 0 2px #f8f9ff; }
+
+/* ── 2. STATS GRID ── */
+.db-stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.db-stat-card { background: #ffffff; border-radius: 16px; padding: 12px; box-shadow: 0 4px 16px rgba(11,28,48,0.03); display: flex; flex-direction: column; justify-content: space-between; min-width: 0; box-sizing: border-box; }
+.db-stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.db-stat-label { font-size: 11px; line-height: 14px; font-weight: 500; color: #545f73; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.db-stat-icon { width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.db-stat-icon.green { background: #ecfdf5; color: #059669; }
+.db-stat-icon.rose  { background: #fff1f2; color: #e11d48; }
+.db-stat-icon.blue  { background: #eff6ff; color: #2563eb; }
+.db-stat-icon .material-symbols-outlined { font-size: 15px; }
+.db-stat-value { font-size: 18px; line-height: 24px; font-weight: 700; color: #0b1c30; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.db-stat-sub { font-size: 10px; line-height: 15px; font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.db-stat-sub.green { color: #059669; }
+.db-stat-sub.rose  { color: #e11d48; }
+.db-stat-sub.blue  { color: #2563eb; }
+
+/* ── 3. CRIMSON HERO CARD ── */
+.db-hero-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #E11D48 0%, #BE123C 50%, #881337 100%);
+  padding: 20px;
+  color: #ffffff;
+  box-shadow: 0 16px 36px rgba(225,29,72,0.22);
+  box-sizing: border-box;
+}
+.db-hero-orb-top { position: absolute; right: -48px; top: -48px; width: 176px; height: 176px; border-radius: 9999px; background: rgba(255,255,255,0.1); filter: blur(40px); pointer-events: none; }
+.db-hero-orb-bot { position: absolute; left: -48px; bottom: -48px; width: 176px; height: 176px; border-radius: 9999px; background: rgba(0,0,0,0.2); filter: blur(40px); pointer-events: none; }
+.db-hero-inner { position: relative; z-index: 10; display: flex; flex-direction: column; gap: 16px; }
+
+.db-hero-pills-row { display: flex; align-items: center; justify-content: space-between; }
+.db-pill-shift { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 9999px; background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); min-width: 0; overflow: hidden; }
+.db-pill-shift-dot { width: 8px; height: 8px; border-radius: 9999px; background: #34d399; flex-shrink: 0; }
+.db-pill-shift-text { font-size: 11px; line-height: 14px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.db-pill-radius { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 9999px; background: rgba(255,255,255,0.10); backdrop-filter: blur(8px); flex-shrink: 0; }
+.db-pill-radius .material-symbols-outlined { font-size: 14px; color: rgba(255,255,255,0.9); }
+.db-pill-radius-text { font-size: 11px; line-height: 14px; font-weight: 600; color: rgba(255,255,255,0.9); white-space: nowrap; }
+
+.db-clock-section { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 4px; padding-bottom: 8px; text-align: center; }
+.db-clock-label { font-size: 11px; line-height: 14px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.8); }
+.db-clock-digits-row { display: flex; align-items: baseline; gap: 6px; margin: 2px 0; }
+.db-clock-digits { font-size: 38px; line-height: 1.2; font-weight: 800; letter-spacing: -0.025em; color: #ffffff; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.05)); }
+.db-clock-wib { font-size: 12px; line-height: 16px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.8); }
+.db-clock-location-row { display: flex; align-items: center; gap: 4px; color: rgba(255,255,255,0.9); }
+.db-clock-location-row .material-symbols-outlined { font-size: 14px; }
+.db-clock-loc-text { font-size: 12px; line-height: 18px; font-weight: 500; color: rgba(255,255,255,0.9); }
+
+/* Biometric panel */
+.db-bio-panel { position: relative; border-radius: 16px; background: rgba(0,0,0,0.20); padding: 14px; backdrop-filter: blur(12px); box-shadow: 0 0 0 1px rgba(255,255,255,0.20); display: flex; flex-direction: column; align-items: center; gap: 12px; overflow: hidden; box-sizing: border-box; }
+.db-bio-status-row { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+.db-bio-status-left { display: flex; align-items: center; gap: 6px; }
+.db-bio-dot { width: 8px; height: 8px; border-radius: 9999px; background: #34d399; flex-shrink: 0; }
+.db-bio-ready-text { font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #6ee7b7; }
+.db-bio-ai-pill { font-size: 10px; line-height: 15px; font-weight: 500; color: rgba(255,255,255,0.70); background: rgba(255,255,255,0.10); padding: 2px 8px; border-radius: 9999px; }
+
+.db-viewfinder { position: relative; width: 100%; max-width: 210px; height: 128px; border-radius: 16px; border: 2px dashed rgba(255,255,255,0.30); background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(0,0,0,0.30) 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; box-shadow: inset 0 2px 4px 2px rgba(0,0,0,0.05); overflow: hidden; }
+.db-bracket { position: absolute; width: 16px; height: 16px; border-color: #ffffff; border-style: solid; box-sizing: border-box; }
+.db-bracket.tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; border-radius: 4px 0 0 0; }
+.db-bracket.tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; border-radius: 0 4px 0 0; }
+.db-bracket.bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; border-radius: 0 0 0 4px; }
+.db-bracket.br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; border-radius: 0 0 4px 0; }
+.db-face-circle { width: 56px; height: 56px; border-radius: 9999px; background: rgba(255,255,255,0.15); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px rgba(255,255,255,0.40), 0 10px 15px -3px rgba(0,0,0,0.10); }
+.db-face-circle .material-symbols-outlined { font-size: 32px; color: #ffffff; }
+.db-viewfinder-guide { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
+.db-viewfinder-guide .material-symbols-outlined { font-size: 14px; color: #34d399; }
+.db-viewfinder-guide-text { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.95); white-space: nowrap; }
+.db-viewfinder-video { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+
+.db-hero-btn { width: 100%; height: 48px; background: #ffffff; color: #e11d48; font-size: 14px; line-height: 20px; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; border: none; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 0 2px rgba(255,255,255,0.40), 0 8px 24px rgba(0,0,0,0.25); cursor: pointer; transition: transform 0.15s ease, background 0.15s ease; }
+.db-hero-btn:hover { background: #f8f9ff; }
+.db-hero-btn:active { transform: scale(0.98); }
+.db-hero-btn .material-symbols-outlined { font-size: 22px; }
+
+.db-cam-btn-row { display: flex; gap: 8px; width: 100%; }
+.db-cam-btn-cancel { flex: 1; height: 44px; background: rgba(255,255,255,0.20); border: none; border-radius: 9999px; color: #ffffff; font-size: 12px; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; cursor: pointer; }
+.db-cam-btn-cancel:hover { background: rgba(255,255,255,0.28); }
+.db-cam-btn-capture { flex: 1; height: 44px; background: #ffffff; border: none; border-radius: 9999px; color: #e11d48; font-size: 12px; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.db-cam-btn-capture:hover { background: #f8f9ff; }
+.db-cam-btn-capture .material-symbols-outlined { font-size: 16px; }
+.db-cam-btn-capture:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Validation badges - 2 col grid like the reference */
+.db-val-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 6px; border-radius: 12px; background: rgba(0,0,0,0.10); backdrop-filter: blur(4px); box-sizing: border-box; }
+.db-val-pill { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; background: rgba(255,255,255,0.10); min-width: 0; }
+.db-val-pill .material-symbols-outlined { font-size: 16px; color: #34d399; flex-shrink: 0; }
+.db-val-content { display: flex; flex-direction: column; min-width: 0; }
+.db-val-title { font-size: 11px; font-weight: 600; color: #ffffff; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.db-val-time { font-size: 10px; color: rgba(255,255,255,0.80); white-space: nowrap; }
+
+/* ── 4. AKSI CEPAT ── */
+.db-aksi-sec { display: flex; flex-direction: column; gap: 8px; }
+.db-sec-heading { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+.db-sec-heading-left { display: flex; align-items: center; gap: 8px; }
+.db-sec-heading-icon { font-size: 20px; color: #e11d48; }
+.db-sec-title { font-size: 18px; line-height: 24px; font-weight: 700; color: #0b1c30; margin: 0; }
+.db-sec-badge { font-size: 11px; line-height: 14px; font-weight: 600; color: #545f73; }
+.db-aksi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.db-aksi-item { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 8px; background: #ffffff; border-radius: 16px; box-shadow: 0 4px 16px rgba(11,28,48,0.02); cursor: pointer; transition: background 0.15s, transform 0.15s; border: none; box-sizing: border-box; width: 100%; }
+.db-aksi-item:hover { background: #eff4ff; }
+.db-aksi-item:active { transform: scale(0.95); }
+.db-aksi-icon { width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.db-aksi-icon .material-symbols-outlined { font-size: 22px; }
+.db-aksi-icon.rose    { background: #fff1f2; color: #e11d48; }
+.db-aksi-icon.amber   { background: #fffbeb; color: #b45309; }
+.db-aksi-icon.indigo  { background: #eef2ff; color: #4f46e5; }
+.db-aksi-icon.emerald { background: #ecfdf5; color: #059669; }
+.db-aksi-label { font-size: 11px; line-height: 14px; font-weight: 700; color: #0b1c30; text-align: center; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+
+/* ── 5. CATATAN PRESENSI ── */
+.db-timeline-sec { display: flex; flex-direction: column; gap: 8px; padding-bottom: 16px; }
+.db-timeline-btn-all { font-size: 11px; line-height: 14px; font-weight: 700; color: #e11d48; background: none; border: none; cursor: pointer; padding: 0; }
+.db-timeline-btn-all:hover { text-decoration: underline; }
+.db-timeline-card { background: #ffffff; border-radius: 24px; padding: 16px; box-shadow: 0 6px 24px rgba(11,28,48,0.03); display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; }
+.db-log-row { display: flex; align-items: flex-start; gap: 14px; padding: 12px; border-radius: 16px; background: rgba(239,244,255,0.60); box-sizing: border-box; }
+.db-log-icon { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.db-log-icon .material-symbols-outlined { font-size: 18px; }
+.db-log-icon.green { background: #d1fae5; color: #047857; }
+.db-log-icon.blue  { background: #dbeafe; color: #1d4ed8; }
+.db-log-icon.pink  { background: #ffdada; color: #b80035; }
+.db-log-body { flex: 1; min-width: 0; }
+.db-log-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.db-log-title { font-size: 12px; line-height: 16px; font-weight: 700; color: #0b1c30; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.db-log-badge { font-size: 11px; line-height: 14px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; flex-shrink: 0; letter-spacing: 0.02em; }
+.db-log-badge.green { background: #ecfdf5; color: #047857; }
+.db-log-badge.blue  { background: #eff6ff; color: #1d4ed8; }
+.db-log-badge.pink  { background: #ffdada; color: #b80035; }
+.db-log-desc { font-size: 12px; line-height: 18px; color: #545f73; margin: 2px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

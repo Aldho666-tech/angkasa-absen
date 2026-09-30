@@ -1,158 +1,230 @@
-import React from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, Suspense, lazy } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import BottomNav from '../../components/layout/BottomNav';
-import Navbar from '../../components/layout/Navbar';
-import Dashboard from './Dashboard';
-import Riwayat from './Riwayat';
-import Izin from './Izin';
-import Profil from './Profil';
+import LoadingFallback from '../../components/common/LoadingFallback';
+import './employee-app.css';
 
-const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Beranda', icon: 'fa-solid fa-house', path: '/employee/dashboard' },
-  { id: 'riwayat', label: 'Riwayat', icon: 'fa-solid fa-clock-rotate-left', path: '/employee/riwayat' },
-  { id: 'izin', label: 'Izin', icon: 'fa-solid fa-file-circle-check', path: '/employee/izin' },
-  { id: 'profil', label: 'Profil', icon: 'fa-solid fa-user', path: '/employee/profil' },
+// Lazy loading employee pages
+const Dashboard = lazy(() => import('./Dashboard'));
+const Riwayat = lazy(() => import('./Riwayat'));
+const Izin = lazy(() => import('./Izin'));
+const Profil = lazy(() => import('./Profil'));
+
+const INITIAL_NOTIFICATIONS = [
+  {
+    id: 1,
+    title: 'Presensi Masuk Terverifikasi',
+    desc: 'Absensi masuk biometric wajah berhasil dicatat pada 07:55:12 WIB.',
+    time: '15 menit lalu',
+    unread: true,
+    icon: 'verified',
+    color: '#059669',
+    bg: '#d1fae5',
+  },
+  {
+    id: 2,
+    title: 'Pengajuan Cuti Disetujui',
+    desc: 'Pengajuan cuti operasional Anda telah disetujui oleh Supervisor.',
+    time: '2 jam lalu',
+    unread: true,
+    icon: 'event_available',
+    color: '#2563eb',
+    bg: '#dbeafe',
+  },
+  {
+    id: 3,
+    title: 'Pengingat Jam Checkout',
+    desc: 'Batas toleransi jam pulang standar adalah 17:00:00 WIB. Jangan lupa presensi.',
+    time: 'Hari Ini',
+    unread: false,
+    icon: 'alarm',
+    color: '#e11d48',
+    bg: '#ffe4e6',
+  },
 ];
 
 export default function EmployeeApp() {
-  const { user, logout, darkMode, toggleDarkMode } = useAuth();
+  const { user, darkMode, toggleDarkMode } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const activeTab = location.pathname.split('/')[2] || 'dashboard';
+  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [showNotifModal, setShowNotifModal] = useState(false);
 
-  const handleTabSelect = (tabId) => {
-    navigate(`/employee/${tabId}`);
+  const unreadCount = notifications.filter((n) => n.unread).length;
+
+  const markAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const clearAllNotifs = () => {
+    setNotifications([]);
   };
+
+  const userInitial = (user?.namaLengkap || user?.nama || 'A')[0].toUpperCase();
 
   return (
-    <div className="app-shell">
-      {/* Desktop Top Navbar */}
-      <Navbar
-        user={user}
-        darkMode={darkMode}
-        onToggleDark={toggleDarkMode}
-        onLogout={handleLogout}
-        navItems={NAV_ITEMS}
-        activeTab={activeTab}
-        onSelectTab={handleTabSelect}
-      />
+    <div className={`emp-shell ${darkMode ? 'dark' : ''}`}>
+      {/* ── Fixed Top Header Bar ── */}
+      <header className="emp-header">
+        <div className="emp-header-inner">
+          {/* Logo Brand */}
+          <button
+            type="button"
+            className="emp-logo-wrap"
+            onClick={() => navigate('/employee/dashboard')}
+            title="Ke Beranda"
+          >
+            <img
+              src="/LOGO.png"
+              alt="PT Angkasa Ekspres"
+              className="emp-logo-img"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          </button>
 
-      {/* Mobile Top Header */}
-      <header className="emp-mobile-header">
-        <div className="emp-mobile-logo">
-          <img src="/LOGO.png" alt="Logo" className="emp-logo-img" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-          <div className="emp-logo-text-group">
-            <span className="emp-logo-title">Angkasa</span>
-            <span className="emp-logo-badge">Absen</span>
+          {/* Right Action Icons */}
+          <div className="emp-actions-row">
+            <button
+              type="button"
+              aria-label="Toggle Dark Mode"
+              onClick={toggleDarkMode}
+              className="emp-action-btn"
+              title={darkMode ? 'Mode Terang' : 'Mode Gelap'}
+            >
+              <span className="material-symbols-outlined">
+                {darkMode ? 'light_mode' : 'dark_mode'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              aria-label="Notifikasi"
+              onClick={() => setShowNotifModal(true)}
+              className="emp-action-btn"
+              title="Pusat Notifikasi"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
+                notifications
+              </span>
+              {unreadCount > 0 && <span className="emp-notif-dot">{unreadCount}</span>}
+            </button>
+
+            <button
+              type="button"
+              aria-label="Profil Akun"
+              onClick={() => navigate('/employee/profil')}
+              className="emp-profile-btn"
+              title={user?.namaLengkap || user?.nama || 'Profil'}
+            >
+              {userInitial}
+            </button>
           </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button className="emp-mobile-icon-btn" onClick={toggleDarkMode} title="Ganti Tema">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              {darkMode ? 'light_mode' : 'dark_mode'}
-            </span>
-          </button>
-          <button className="emp-mobile-icon-btn danger" onClick={handleLogout} title="Keluar">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              logout
-            </span>
-          </button>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="app-main">
-        <Routes>
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="riwayat" element={<Riwayat />} />
-          <Route path="izin" element={<Izin />} />
-          <Route path="profil" element={<Profil />} />
-          <Route path="*" element={<Navigate to="dashboard" replace />} />
-        </Routes>
+      {/* ── Main Viewport Container with Lazy Loading & Suspense ── */}
+      <main className="emp-viewport">
+        <Suspense fallback={<LoadingFallback title="Memuat Halaman Karyawan..." subtitle="Menyiapkan data profil & presensi" />}>
+          <div className="page-view-enter">
+            <Routes>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="riwayat" element={<Riwayat />} />
+              <Route path="izin" element={<Izin />} />
+              <Route path="profil" element={<Profil />} />
+              <Route path="*" element={<Navigate to="dashboard" replace />} />
+            </Routes>
+          </div>
+        </Suspense>
       </main>
 
-      {/* Mobile Bottom Nav */}
-      <BottomNav
-        items={NAV_ITEMS}
-        activeTab={activeTab}
-        onSelectTab={handleTabSelect}
-      />
+      {/* ── Interactive Notification Center Modal ── */}
+      {showNotifModal && (
+        <div className="emp-modal-overlay" onClick={() => setShowNotifModal(false)}>
+          <div className="emp-modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="emp-modal-header">
+              <div className="emp-modal-title-box">
+                <span className="material-symbols-outlined text-[20px]" style={{ color: '#e11d48' }}>
+                  notifications_active
+                </span>
+                <h3 className="emp-modal-title">Pusat Notifikasi</h3>
+              </div>
+              <button
+                type="button"
+                className="emp-modal-close-btn"
+                onClick={() => setShowNotifModal(false)}
+              >
+                &times;
+              </button>
+            </div>
 
-      <style>{`
-        .emp-mobile-header {
-          display: none;
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 54px;
-          background: var(--bg-card);
-          border-bottom: 1px solid var(--border-color);
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 16px;
-          z-index: 100;
-          box-shadow: var(--shadow-sm);
-        }
-        .emp-mobile-logo {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-        .emp-logo-img {
-          height: 32px;
-          width: auto;
-          object-fit: contain;
-        }
-        .emp-logo-text-group {
-          display: flex;
-          flex-direction: column;
-          line-height: 1;
-        }
-        .emp-logo-title {
-          font-size: 16px;
-          font-weight: 800;
-          letter-spacing: -0.02em;
-          color: var(--text-primary);
-        }
-        .emp-logo-badge {
-          font-size: 10px;
-          font-weight: 800;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-          color: #e11d48;
-          margin-top: 1px;
-        }
-        .emp-mobile-icon-btn {
-          width: 38px;
-          height: 38px;
-          border-radius: 50%;
-          border: 1px solid var(--border-color);
-          background: var(--bg-card);
-          color: var(--text-secondary);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s;
-        }
-        .emp-mobile-icon-btn:hover {
-          background: var(--bg-hover);
-        }
-        .emp-mobile-icon-btn.danger { color: #e11d48; border-color: rgba(225, 29, 72, 0.2); }
-        @media (max-width: 768px) {
-          .emp-mobile-header { display: flex; }
-          .app-main { padding-top: 54px !important; }
-        }
-      `}</style>
+            <div className="emp-modal-body">
+              {notifications.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 0', color: '#545f73', fontSize: '13px' }}>
+                  <span className="material-symbols-outlined text-[32px] text-gray-400 mb-1">
+                    notifications_off
+                  </span>
+                  <p>Tidak ada notifikasi saat ini.</p>
+                </div>
+              ) : (
+                notifications.map((notif) => (
+                  <div
+                    key={notif.id}
+                    className="emp-notif-item"
+                    onClick={() => {
+                      setNotifications((prev) =>
+                        prev.map((n) => (n.id === notif.id ? { ...n, unread: false } : n))
+                      );
+                    }}
+                  >
+                    <div
+                      className="emp-notif-icon-box"
+                      style={{ background: notif.bg, color: notif.color }}
+                    >
+                      <span className="material-symbols-outlined text-[20px]">{notif.icon}</span>
+                    </div>
+                    <div className="emp-notif-text-box">
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                        <span className="emp-notif-item-title">{notif.title}</span>
+                        {notif.unread && (
+                          <span style={{ width: '6px', height: '6px', borderRadius: '9999px', background: '#e11d48' }}></span>
+                        )}
+                      </div>
+                      <span className="emp-notif-item-desc">{notif.desc}</span>
+                      <span className="emp-notif-item-time">{notif.time}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="emp-modal-footer">
+              <button
+                type="button"
+                className="emp-modal-action-btn"
+                style={{ color: '#545f73' }}
+                onClick={clearAllNotifs}
+              >
+                Hapus Semua
+              </button>
+              <button
+                type="button"
+                className="emp-modal-action-btn"
+                style={{ color: '#e11d48' }}
+                onClick={markAllRead}
+              >
+                Tandai Sudah Dibaca
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Fixed Floating Bottom Navigation Dock ── */}
+      <BottomNav />
     </div>
   );
 }
